@@ -80,16 +80,16 @@ void* ConsoleView::do_console_thread(void *arg)
     cin >> server_port;
 
     // Apply defaults
-    if (nickname == "")
+    if (nickname == "\\")
         nickname = "user";
 
-    if (local_port == "")
+    if (local_port == "\\")
         local_port = "6000";
 
-    if (server_ip == "")
+    if (server_ip == "\\")
         server_ip = "172.16.17.131";
 
-    if (server_port == "")
+    if (server_port == "\\")
         server_port = "8000";
 
     // GO!!!
@@ -106,6 +106,7 @@ void* ConsoleView::do_console_thread(void *arg)
         cin >> message;
 
         // TODO: Send message
+        me->model->getConnector()->sendMessage(destination, message);
     }
 
     me->console_thread_is_running = false;
