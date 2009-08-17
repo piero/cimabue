@@ -8,17 +8,36 @@
 #ifndef CIMABUECLIENT_H_
 #define CIMABUECLIENT_H_
 
-#include "Node.h"
+#include <nodes/Node.h>
 
 #define DATA_SEPARATOR	"@"
+
+
+typedef enum
+{
+	EVT_NONE,
+	EVT_ERROR,
+	EVT_CONNECTING,
+	EVT_CONNECTED,
+	EVT_NEW_MESSAGE,
+	EVT_UPDATE_CLIENT_LIST,
+	EVT_UPDATE_SERVER
+} event_type_t;
+
+typedef struct
+{
+	event_type_t type;
+	std::string data;
+} event_t;
+
+
+class StateManager;
+
 
 class CimabueClient : public Node
 {
 public:
-    CimabueClient(std::string nick,
-                  unsigned short local_port,
-                  std::string server_address,
-                  unsigned short server_port = NODE_PORT_SERVER_UP);
+    CimabueClient(StateManager *caller);
 
     virtual ~CimabueClient();
 
@@ -44,6 +63,8 @@ private:
     std::string server;
     std::string server_ip;
     unsigned int server_port;
+
+    StateManager *manager;
 };
 
 

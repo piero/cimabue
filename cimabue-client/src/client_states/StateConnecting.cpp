@@ -18,15 +18,7 @@ StateConnecting::~StateConnecting()
 
 void StateConnecting::onEntry()
 {
-	// Connect to Server
-	last_event = EVT_CONNECTING;
-	manager->updateViews();
-
 	manager->connectToServer();
-
-	// Notify views
-	last_event = EVT_CONNECTED;
-	manager->updateViews();
 
 	// Go to Ready state
 	manager->setState(new StateReady(manager));

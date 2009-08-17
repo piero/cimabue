@@ -9,7 +9,7 @@
 #define STATEMANAGER_H_
 
 #include "client_states/StateInit.h"
-#include "nodes/CimabueClient.h"
+#include "CimabueClient.h"
 #include <list>
 
 class Observer;
@@ -25,13 +25,16 @@ public:
 
     void addView(Observer *view);
     void remView(Observer *view);
-    void updateViews();
+    void updateViews(event_t event);
 
     void setServerIP(std::string ip);
     void setServerPort(unsigned short port);
 
+    unsigned short getClientPort();
     std::string getServerIP();
     unsigned short getServerPort();
+
+    std::string getNickname();
 
     void connectToServer();
     bool isConnected();

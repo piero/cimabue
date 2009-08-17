@@ -12,8 +12,7 @@ using namespace std;
 
 ClientState::ClientState(StateManager *caller, state_t id)
         : manager(caller),
-        stateID(id),
-        last_event(EVT_NONE)
+        stateID(id)
 {}
 
 ClientState::~ClientState()
@@ -23,13 +22,6 @@ state_t ClientState::getID()
 {
     return stateID;
 }
-
-
-event_t ClientState::getLastEvent()
-{
-    return last_event;
-}
-
 
 string ClientState::getName()
 {

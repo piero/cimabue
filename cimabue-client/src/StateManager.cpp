@@ -66,12 +66,12 @@ void StateManager::remView(Observer *view)
     }
 }
 
-void StateManager::updateViews()
+void StateManager::updateViews(event_t event)
 {
     list<Observer*>::iterator iter;
 
     for (iter = views.begin(); iter != views.end(); iter++)
-        (*iter)->update();
+        (*iter)->update(event);
 }
 
 void StateManager::setServerIP(string ip)
@@ -84,6 +84,11 @@ void StateManager::setServerPort(unsigned short port)
     server_port = port;
 }
 
+unsigned short StateManager::getClientPort()
+{
+    return client_port;
+}
+
 string StateManager::getServerIP()
 {
     return server_ip;
@@ -94,6 +99,11 @@ unsigned short StateManager::getServerPort()
     return server_port;
 }
 
+string StateManager::getNickname()
+{
+    return nickname;
+}
+
 bool StateManager::isConnected()
 {
     return connected;
@@ -101,7 +111,7 @@ bool StateManager::isConnected()
 
 void StateManager::connectToServer()
 {
-    connector = new CimabueClient(nickname, client_port, server_ip, server_port);
+    connector = new CimabueClient(this);
 
     if (connector != NULL)
         connected = true;

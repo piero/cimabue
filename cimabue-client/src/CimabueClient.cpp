@@ -6,19 +6,19 @@
 */
 
 #include "CimabueClient.h"
+#include "StateManager.h"
 
 using namespace std;
 
-CimabueClient::CimabueClient(string nick,
-                             unsigned short localPort,
-                             string serverIP,
-                             unsigned short serverPort) :
-        Node(localPort + 1, localPort)
+CimabueClient::CimabueClient(StateManager *caller) :
+        Node(caller->getClientPort() + 1, caller->getClientPort())
 {
+	manager = caller;
+
     connectedToServer = false;
-    server_ip = serverIP;
-    server_port = serverPort;
-    nickname = nick;
+    server_ip = manager->getServerIP();
+    server_port = manager->getServerPort();
+    nickname = manager->getNickname();
 
     // Connect to Server
     connectToServer(server_ip);
@@ -146,6 +146,11 @@ int CimabueClient::processDownMessage(Message *msg, int skt)
             Message ack;
             ack.Reply(skt);
             log.print(LOG_DEBUG, "[ ] Replied to SEND_MESSAGE request\n");
+
+            event_t ev;
+            ev.type = EVT_NEW_MESSAGE;
+            ev.data = msg->getData();
+            manager->updateViews(ev);
         }
         break;
 

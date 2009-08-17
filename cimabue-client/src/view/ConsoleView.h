@@ -17,7 +17,7 @@ public:
     ConsoleView(StateManager *caller);
     virtual ~ConsoleView();
 
-    void update();
+    void update(event_t event);
 
 private:
     bool kill_console;

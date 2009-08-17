@@ -16,7 +16,7 @@ public:
     Observer(StateManager *caller);
     virtual ~Observer();
 
-    virtual void update() = 0;
+    virtual void update(event_t event) = 0;
 
 protected:
     StateManager *model;

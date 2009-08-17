@@ -28,9 +28,9 @@ ConsoleView::~ConsoleView()
 }
 
 
-void ConsoleView::update()
+void ConsoleView::update(event_t event)
 {
-    switch (model->getState()->getLastEvent())
+    switch (event.type)
     {
     case EVT_CONNECTING:
         printf("[V] Connecting to %s:%d...\n", model->getServerIP().c_str(), model->getServerPort());
@@ -41,6 +41,7 @@ void ConsoleView::update()
         break;
 
     case EVT_NEW_MESSAGE:
+    	printf("[V] Received new message\n\t%s\n", event.data.c_str());
         break;
 
     case EVT_UPDATE_CLIENT_LIST:

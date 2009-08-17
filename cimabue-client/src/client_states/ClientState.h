@@ -24,18 +24,6 @@ typedef enum
 } state_t;
 
 
-typedef enum
-{
-	EVT_NONE,
-	EVT_ERROR,
-	EVT_CONNECTING,
-	EVT_CONNECTED,
-	EVT_NEW_MESSAGE,
-	EVT_UPDATE_CLIENT_LIST,
-	EVT_UPDATE_SERVER
-} event_t;
-
-
 class ClientState
 {
 public:
@@ -43,7 +31,6 @@ public:
     virtual ~ClientState();
 
     state_t getID();
-    event_t getLastEvent();
     std::string getName();
 
     virtual void handleInput() = 0;
@@ -53,7 +40,6 @@ public:
 protected:
     StateManager *manager;
     state_t stateID;
-    event_t last_event;
 
     Log log;
 };
