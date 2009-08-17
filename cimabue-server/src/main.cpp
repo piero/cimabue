@@ -7,9 +7,17 @@
 
 #include <cimabue.h>
 #include <iostream>
+#include <signal.h>
 #include "StateManager.h"
 
 using namespace std;
+
+bool quit = false;
+
+void sigint_handler(int sig)
+{
+	quit = true;
+}
 
 
 int main(int argc, char *argv[])
@@ -20,7 +28,19 @@ int main(int argc, char *argv[])
 		exit(0);
 	}
 
+	signal(SIGINT, &sigint_handler);
+
 	Log::setLogLevel(LOG_DEBUG);
 
+	printf("Creating State Manager...\n");
+
 	StateManager manager(atoi(argv[1]));
+	manager.init();
+
+	while (!quit)
+	{
+		sleep(1);
+	}
+
+	printf("\nBye :-)\n");
 }

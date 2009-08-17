@@ -14,14 +14,10 @@ ServerState::ServerState(StateManager *caller, state_t id)
         : manager(caller),
         stateID(id),
         last_event(EVT_NONE)
-{
-    onEntry();
-}
+{}
 
 ServerState::~ServerState()
-{
-    onExit();
-}
+{}
 
 state_t ServerState::getID()
 {
@@ -41,6 +37,10 @@ string ServerState::getName()
 
 	switch(stateID)
 	{
+	case STATE_NONE:
+		state_name = "NONE";
+		break;
+
 	case STATE_INIT:
 		state_name = "INIT";
 		break;

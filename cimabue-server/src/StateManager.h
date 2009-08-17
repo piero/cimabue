@@ -24,10 +24,15 @@ public:
     ServerState* getState();
 
     void handleInput();
+    void startServer();
+
+    void init();
 
 private:
     ServerState *current_state;
+    CimabueServer *server;
     Log log;
+    unsigned short server_port;
 };
 
 

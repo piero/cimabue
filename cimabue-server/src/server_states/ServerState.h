@@ -44,10 +44,10 @@ public:
     std::string getName();
 
     virtual void handleInput() = 0;
+    virtual void onEntry() = 0;
+    virtual void onExit() = 0;
 
 protected:
-    virtual void onEntry() {};
-    virtual void onExit() {};
 
     StateManager *manager;
     state_t stateID;

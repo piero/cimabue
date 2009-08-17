@@ -17,7 +17,7 @@ Node::Node(unsigned short upPort,
         die(false),
         selectTimeout(timeout)
 {
-	getLocalIPAddress(ip, "eth0");
+    getLocalIPAddress(ip, "eth0");
     portList[UP_PORT] = upPort;
     portList[DOWN_PORT] = DownPort;
 
@@ -87,6 +87,7 @@ void* Node::do_listen_thread(void *arg)
     for (port = 0; port < MAX_PORTS; ++port)
     {
         me->sktList[port] = me->CreateListeningSocket(me->portList[port]);
+
         if (me->sktList[port] > maxDescriptor)
             maxDescriptor = me->sktList[port];
     }
@@ -171,6 +172,9 @@ void* Node::do_process_thread(void *arg)
 int Node::CreateListeningSocket(unsigned short port)
 {
     int newSkt;
+
+    log.print(LOG_DEBUG, "[ ] Creating socket on port %d...\n", port);
+
     if ((newSkt = socket(PF_INET, SOCK_STREAM, 0)) < 0)
     {
         fprintf(stderr, "Error in socket() : %s\n", strerror(errno));
@@ -391,7 +395,7 @@ int Node::getLocalIPAddress(string &ip_addr, string iface)
         if (strncmp(ifr->ifr_name, iface.c_str(), iface.length()) == 0)
         {
             ip_addr = string(inet_ntoa(inaddrr(ifr_addr.sa_data)));
-            log.print(LOG_PARANOID, "[ ] Found: %s", ip_addr.c_str());
+            log.print(LOG_PARANOID, "[ ] Found: %s\n", ip_addr.c_str());
             break;
         }
     }

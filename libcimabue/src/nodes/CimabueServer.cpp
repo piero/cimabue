@@ -9,11 +9,13 @@
 
 using namespace std;
 
-CimabueServer::CimabueServer(bool enablePing) :
-        Node(NODE_PORT_SERVER_UP, NODE_PORT_SERVER_DOWN)
+CimabueServer::CimabueServer(unsigned short port, bool enablePing) :
+        Node(port + 1, port)
 {
     pingProxy_is_running = false;
     ping_enabled = enablePing;
+
+    log.print(LOG_DEBUG, "CimabueServer()\n");
 
     pthread_mutex_init(&proxyList_mutex, NULL);
     pthread_mutex_init(&clientList_mutex, NULL);

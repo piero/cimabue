@@ -13,7 +13,7 @@
 class CimabueServer : public Node
 {
 public:
-	CimabueServer(bool enablePing = true);
+	CimabueServer(unsigned short port = NODE_PORT_SERVER_DOWN, bool enablePing = true);
 	virtual ~CimabueServer();
 
 	unsigned int getServerPort();
