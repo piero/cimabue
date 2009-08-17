@@ -9,6 +9,7 @@
 #define CONSOLEVIEW_H_
 
 #include "Observer.h"
+#include <iostream>
 
 class ConsoleView : public Observer
 {
@@ -17,6 +18,12 @@ public:
     virtual ~ConsoleView();
 
     void update();
+
+private:
+    bool kill_console;
+    pthread_t input_thread;
+    bool input_thread_is_running;
+    static void* do_input_thread(void *arg);
 };
 
 
