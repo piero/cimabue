@@ -13,9 +13,7 @@ StateManager::StateManager(unsigned short local_port)
         : current_state(NULL),
         server(NULL),
         server_port(local_port)
-{
-    //current_state = new StateInit(this);
-}
+{}
 
 StateManager::~StateManager()
 {}
