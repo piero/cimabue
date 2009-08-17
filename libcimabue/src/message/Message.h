@@ -24,7 +24,6 @@ typedef enum
     MSG_ADD_CLIENT,        	// add a client
     MSG_REM_CLIENT,        	// remove a client
     MSG_SEND_MESSAGE,       // send a message
-    MSG_GET_CLIENT_LIST,    // a proxy or a server requests client list from server
     MSG_SET_CLIENT_LIST,    // send client list (server)
     MSG_PING_CLIENT,		// Ping a client to verify its connection
     MSG_USER,				// user-specific
@@ -49,13 +48,9 @@ typedef enum
 /*
  * Base message format
  *
- * type-src_client-dst_client-src_proxy-dst_proxy-src_server-dst_server-data-priority
- *
- * (8 fields)
+ * type-src_client-dst_client-src_server-dst_server-data-priority
  *
  */
-
-#define MSG_FIELDS	9
 
 class Message
 {
@@ -108,7 +103,7 @@ public:
 	virtual message_priority_t getPriority();
 	virtual void setPriority(message_priority_t p);
 
-	virtual void copy(Message &to);
+	virtual void copyTo(Message &to);
 
 	virtual std::string serialize();
 	virtual void deserialize(std::string s);

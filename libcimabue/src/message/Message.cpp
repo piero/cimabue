@@ -122,6 +122,8 @@ int Message::Reply(int skt)
 
 Message* Message::Send(std::string ip, unsigned int port)
 {
+	messageLog.print(LOG_DEBUG, "Message::Send(%s, %d)\n", ip.c_str(), port);
+
     int skt = socket(PF_INET, SOCK_STREAM, 0);
 
     if (skt < 0)
@@ -135,7 +137,7 @@ Message* Message::Send(std::string ip, unsigned int port)
                            "Error creating socket");
     }
 
-    // Set a receive timeout
+    // Set socket timeouts
     struct timeval timeout;
     timeout.tv_sec = 5;
     timeout.tv_usec = 0;
@@ -204,7 +206,7 @@ Message* Message::Send(std::string ip, unsigned int port)
 }
 
 
-void Message::copy(Message &to)
+void Message::copyTo(Message &to)
 {
     to.setType(type);
     to.setClientSource(clientSrc);

@@ -42,7 +42,7 @@ private:
     bool connectedToServer;
 
     std::string nickname;
-    std::string proxy;
+    std::string server;
     std::string server_ip;
     unsigned int server_port;
 };

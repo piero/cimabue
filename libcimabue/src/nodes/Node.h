@@ -116,7 +116,6 @@ protected:
         NODE_RET_ERROR,
         NODE_RET_DESTINATION_IS_NOT_ME,
         NODE_RET_CLIENT_NOT_FOUND,
-        NODE_RET_PROXY_NOT_FOUND,
         NODE_RET_SERVER_NOT_FOUND
     };
 
@@ -125,8 +124,6 @@ protected:
     {
         NODE_PORT_SERVER_UP = 8001,
         NODE_PORT_SERVER_DOWN = 8000,
-        NODE_PORT_PROXY_UP = 7001,
-        NODE_PORT_PROXY_DOWN = 7000,
         NODE_PORT_CLIENT_UP = 6001,
         NODE_PORT_CLIENT_DOWN = 6000
     };

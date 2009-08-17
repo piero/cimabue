@@ -12,21 +12,19 @@ using namespace std;
 CimabueServer::CimabueServer(unsigned short port, bool enablePing) :
         Node(port + 1, port)
 {
-    pingProxy_is_running = false;
+    pingClient_is_running = false;
     ping_enabled = enablePing;
 
     log.print(LOG_DEBUG, "CimabueServer()\n");
 
-    pthread_mutex_init(&proxyList_mutex, NULL);
-    pthread_mutex_init(&clientList_mutex, NULL);
     pthread_mutex_init(&serverList_mutex, NULL);
-    pthread_mutex_init(&proxyServerList_mutex, NULL);
-    pthread_mutex_init(&proxyPingList_mutex, NULL);
+    pthread_mutex_init(&clientList_mutex, NULL);
+    pthread_mutex_init(&clientPingList_mutex, NULL);
 
     if (ping_enabled)
     {
         // Ping connected clients
-        if (pthread_create(&pingProxy_tid, NULL, do_pingClient, this) != 0)
+        if (pthread_create(&pingClient_tid, NULL, do_pingClient, this) != 0)
         {
             log.print(LOG_ERROR, "[!] Error creating pinging thread\n");
         }
@@ -35,18 +33,16 @@ CimabueServer::CimabueServer(unsigned short port, bool enablePing) :
 
 CimabueServer::~CimabueServer()
 {
-    if (pingProxy_is_running)
+    if (pingClient_is_running)
     {
         // Join pingProxy thread
-        if (pthread_join(pingProxy_tid, NULL) != 0)
+        if (pthread_join(pingClient_tid, NULL) != 0)
             log.print(LOG_ERROR, "[!] Error joining proxy_ping thread\n");
     }
 
-    pthread_mutex_destroy(&proxyList_mutex);
-    pthread_mutex_destroy(&clientList_mutex);
     pthread_mutex_destroy(&serverList_mutex);
-    pthread_mutex_destroy(&proxyServerList_mutex);
-    pthread_mutex_destroy(&proxyPingList_mutex);
+    pthread_mutex_destroy(&clientList_mutex);
+    pthread_mutex_destroy(&clientPingList_mutex);
 
     log.print(LOG_DEBUG, "[x] Server\n");
 }
@@ -55,52 +51,52 @@ CimabueServer::~CimabueServer()
 void* CimabueServer::do_pingClient(void *myself)
 {
     CimabueServer *me = (CimabueServer*) myself;
-    me->pingProxy_is_running = true;
+    me->pingClient_is_running = true;
 
     while (!me->die)
     {
         // Send a PING_PROXY message to each connected client
-        map<string, string>::iterator proxy_iter;
-        pthread_mutex_lock(&me->proxyList_mutex);
+        map<string, string>::iterator client_iter;
+        pthread_mutex_lock(&me->clientList_mutex);
 
-        for (proxy_iter = me->proxyList.begin(); proxy_iter != me->proxyList.end(); proxy_iter++)
+        for (client_iter = me->clientNameToIPMap.begin(); client_iter != me->clientNameToIPMap.end(); client_iter++)
         {
-            me->log.print(LOG_DEBUG, "[ ] Pinging %s...\n", proxy_iter->first.c_str());
+            me->log.print(LOG_DEBUG, "[ ] Pinging %s...\n", client_iter->first.c_str());
 
             Message ping(MSG_PING_CLIENT,
-                         MSG_VOID, proxy_iter->first,
+                         MSG_VOID, client_iter->first,
                          me->name, MSG_VOID,
                          MSG_VOID);
 
-            Message *pong = ping.Send(proxy_iter->second, NODE_PORT_PROXY_UP);
+            Message *pong = ping.Send(client_iter->second, NODE_PORT_CLIENT_UP);
 
             if (!pong->isErrorMessage())
             {
                 // Update timestamp
                 map<string, timestamp_t>::iterator ping_iter;
-                pthread_mutex_lock(&me->proxyPingList_mutex);
-                ping_iter = me->proxyPingList.find(proxy_iter->first);
+                pthread_mutex_lock(&me->clientPingList_mutex);
+                ping_iter = me->clientPingList.find(client_iter->first);
                 ping_iter->second = me->getTimestamp();
 
                 me->log.print(LOG_DEBUG, "[ ] Updated timestamp: %s - %ld\n",
                               ping_iter->first.c_str(), ping_iter->second);
-                pthread_mutex_unlock(&me->proxyPingList_mutex);
+                pthread_mutex_unlock(&me->clientPingList_mutex);
             }
             else
                 me->log.print(LOG_ERROR, "[!] Error pinging %s: %s\n",
-                              proxy_iter->first.c_str(),
+                              client_iter->first.c_str(),
                               ((ErrorMessage*) pong)->getErrorMessage().c_str());
 
             delete pong;
         }
-        pthread_mutex_unlock(&me->proxyList_mutex);
+        pthread_mutex_unlock(&me->clientList_mutex);
 
         // Delete timed-out clients
         map<string, timestamp_t>::iterator ping_iter;
-        pthread_mutex_lock(&me->proxyPingList_mutex);
+        pthread_mutex_lock(&me->clientPingList_mutex);
 
-        for (ping_iter = me->proxyPingList.begin(); ping_iter
-                != me->proxyPingList.end(); ping_iter++)
+        for (ping_iter = me->clientPingList.begin(); ping_iter
+                != me->clientPingList.end(); ping_iter++)
         {
             timestamp_t now = me->getTimestamp();
             timestamp_t delta = now - ping_iter->second;
@@ -111,17 +107,17 @@ void* CimabueServer::do_pingClient(void *myself)
                               ping_iter->first.c_str(), delta);
 
                 // Remove proxy from proxyList and proxyPingList
-                pthread_mutex_unlock(&me->proxyPingList_mutex);
-                me->removeProxy(ping_iter->first);
-                pthread_mutex_lock(&me->proxyPingList_mutex);
+                pthread_mutex_unlock(&me->clientPingList_mutex);
+                me->removeClient(ping_iter->first);
+                pthread_mutex_lock(&me->clientPingList_mutex);
             }
         }
-        pthread_mutex_unlock(&me->proxyPingList_mutex);
+        pthread_mutex_unlock(&me->clientPingList_mutex);
 
         sleep(5);
     }
 
-    me->pingProxy_is_running = false;
+    me->pingClient_is_running = false;
     pthread_exit(0);
 }
 
@@ -146,7 +142,7 @@ int CimabueServer::processDownMessage(Message *msg, int skt)
 
     log.print(LOG_INFO, "[ ] Processing message from a CLIENT\n");
 
-    // A new proxy doesn't know our name, but only our IP address
+    // A new client doesn't know our name, but only our IP address
     if (msg->getType() == MSG_ADD_CLIENT)
     {
         answer = executeAddClient(msg);
@@ -201,188 +197,115 @@ int CimabueServer::processDownMessage(Message *msg, int skt)
 
 Message* CimabueServer::executeSendMessage(Message *msg)
 {
-    // Retrieve the proxy connected to the destination
-    string proxy = getProxyWithClient(msg->getClientDest());
+    /* 1) Check if destination client is registered
+     * 2) Get destination IP:port
+     * 3) Send message to destination
+     * 4) Send reply to source
+     */
 
-    if (proxy == MSG_VOID)
+	log.print(LOG_DEBUG, "CimabueServer::executeSendMessage(%s)\n", msg->getClientDest().c_str());
+
+    if (haveClient(msg->getClientDest()))
     {
-        log.print(LOG_ERROR, "[!] Cannot find any Proxy with client %s\n",
-                  msg->getClientDest().c_str());
+    	string dest_nick;
+        string dest_ip = getClientAddress(msg->getClientDest());
+        unsigned dest_port;
 
-        ErrorMessage *reply = new ErrorMessage();
-        reply->setErrorMessage("Proxy not found");
-        return reply;
-    }
-
-    log.print(LOG_DEBUG, "[ ] Client %s is connected to Proxy %s\n",
-              msg->getClientSource().c_str(), proxy.c_str());
-
-    string server = whoHasProxy(proxy);
-
-    if (server == MSG_VOID)
-    {
-        log.print(LOG_ERROR, "[!] Cannot find any Server with proxy %s\n",
-                  proxy.c_str());
-
-        ErrorMessage *reply = new ErrorMessage();
-        reply->setErrorMessage("Server not found");
-        return reply;
-    }
-
-    if (server == name)
-    {
-        // Forward message to local proxy
-        log.print(LOG_DEBUG, "[ ] Forward message to local proxy (%s)\n",
-                  proxy.c_str());
+        parseNameAndAddress(&dest_nick, &dest_ip, &dest_port);
 
         Message *forward_msg = new Message();
-        msg->copy(*forward_msg);
+        msg->copyTo(*forward_msg);
         forward_msg->setServerSource(name);
-        forward_msg->setClientDest(proxy);
+        forward_msg->setServerDest(MSG_VOID);
 
-        Message *reply = forward_msg->Send(getProxyAddress(proxy), NODE_PORT_PROXY_UP);
+        Message *reply = forward_msg->Send(dest_ip, dest_port);
 
         return reply;
     }
     else
     {
-        // Forward message to remote server
-        log.print(LOG_DEBUG, "[ ] Forward message to remote server (%s)\n",
-                  server.c_str());
+    	log.print(LOG_ERROR, "[!] Destination %s not found!\n", msg->getClientDest().c_str());
 
-        Message *reply = new Message();
-        msg->copy(*reply);
-        reply->setServerSource(name);
-        reply->setServerDest(server);
-        return reply;
+        return new ErrorMessage("DESTINATION NOT FOUND");
     }
 }
 
 Message* CimabueServer::executeAddClient(Message *msg)
 {
-    Message *reply = NULL;
-
     // Add client to list
     pthread_mutex_lock(&clientList_mutex);
-    clientList.insert(pair<string, string> (msg->getData(),
-                                            msg->getClientSource()));
+    /*
+    clientNameToIPMap.insert(pair<string, string> (msg->getData(),
+                             msg->getClientSource()));
+    */
+
+    clientNameToIPMap.insert(pair<string, string> (
+                                 msg->getClientSource(),
+                                 msg->getData()));
 
     log.print(LOG_INFO, "[+] Added Client %s --> %s (%d clients)\n",
-              msg->getData().c_str(), msg->getClientSource().c_str(),
-              clientList.size());
+              msg->getClientSource().c_str(), msg->getData().c_str(),
+              clientNameToIPMap.size());
 
     pthread_mutex_unlock(&clientList_mutex);
 
-    // Reply to Proxy
-    reply = new Message(MSG_ADD_CLIENT,
-                        MSG_VOID, msg->getClientSource(),
-                        name, MSG_VOID,
-                        msg->getData());
-
-    return reply;
+    // Reply to Client
+    return new Message(MSG_ADD_CLIENT,
+                       MSG_VOID, msg->getClientSource(),
+                       name, MSG_VOID,
+                       msg->getData());
 }
 
 Message* CimabueServer::executeRemClient(Message *msg)
 {
-    Message *reply = NULL;
-
     // Remove client from list
     pthread_mutex_lock(&clientList_mutex);
-    clientList.erase(msg->getData());
+    clientNameToIPMap.erase(msg->getData());
     pthread_mutex_unlock(&clientList_mutex);
 
-    reply = new Message();
-    return reply;
+    return new Message(MSG_REM_CLIENT,
+                       MSG_VOID, msg->getClientSource(),
+                       name, MSG_VOID,
+                       msg->getData());
 }
 
-bool CimabueServer::haveProxy(string const proxyName)
-{
-    bool retval = false;
-
-    pthread_mutex_lock(&proxyList_mutex);
-    map<string, string>::iterator iter;
-    iter = proxyList.find(proxyName);
-
-    if (iter != proxyList.end())
-        retval = true;
-    pthread_mutex_unlock(&proxyList_mutex);
-
-    return retval;
-}
-
-string CimabueServer::getProxyWithClient(string const clientName)
-{
-    string retval = MSG_VOID;
-
-    pthread_mutex_lock(&clientList_mutex);
-    map<string, string>::iterator iter;
-    iter = clientList.find(clientName);
-
-    if (iter != clientList.end())
-        retval = iter->second;
-    pthread_mutex_unlock(&clientList_mutex);
-
-    return retval;
-}
-
-string CimabueServer::getServerAddress(string const serverName)
+string CimabueServer::getServerAddress(string serverName)
 {
     string retval = MSG_VOID;
 
     pthread_mutex_lock(&serverList_mutex);
     map<string, string>::iterator iter;
-    iter = serverList.find(serverName);
+    iter = serverNameToIPMap.find(serverName);
 
-    if (iter != serverList.end())
+    if (iter != serverNameToIPMap.end())
         retval = iter->second;
     pthread_mutex_unlock(&serverList_mutex);
 
     return retval;
 }
 
-string CimabueServer::whoHasProxy(string const proxyName)
+void CimabueServer::removeClient(string clientName)
 {
-    string retval = MSG_VOID;
+    // Remove the Proxy from all related lists
 
-    pthread_mutex_lock(&proxyServerList_mutex);
-    map<string, string>::iterator iter;
-    iter = proxyServerList.find(proxyName);
+    pthread_mutex_lock(&clientList_mutex);
+    clientNameToIPMap.erase(clientName);
+    pthread_mutex_unlock(&clientList_mutex);
 
-    if (iter != proxyServerList.end())
-        retval = iter->second;
-    pthread_mutex_unlock(&proxyServerList_mutex);
-
-    return retval;
+    pthread_mutex_lock(&clientPingList_mutex);
+    clientPingList.erase(clientName);
+    pthread_mutex_unlock(&clientPingList_mutex);
 }
 
-string CimabueServer::getProxyAddress(string const proxyName)
+bool CimabueServer::haveClient(string clientName)
 {
-    string retval = MSG_VOID;
-
-    pthread_mutex_lock(&proxyList_mutex);
-    map<string, string>::iterator iter;
-    iter = proxyList.find(proxyName);
-
-    if (iter != proxyList.end())
-        retval = iter->second;
-    pthread_mutex_unlock(&proxyList_mutex);
-
-    return retval;
+    if (clientNameToIPMap.find(clientName) != clientNameToIPMap.end())
+        return true;
+    else
+        return false;
 }
 
-void CimabueServer::removeProxy(std::string proxyName)
+string CimabueServer::getClientAddress(string clientName)
 {
-	// Remove the Proxy from all related lists
-
-    pthread_mutex_lock(&proxyList_mutex);
-    proxyList.erase(proxyName);
-    pthread_mutex_unlock(&proxyList_mutex);
-
-    pthread_mutex_lock(&proxyServerList_mutex);
-    proxyServerList.erase(proxyName);
-    pthread_mutex_unlock(&proxyServerList_mutex);
-
-    pthread_mutex_lock(&proxyPingList_mutex);
-    proxyPingList.erase(proxyName);
-    pthread_mutex_unlock(&proxyPingList_mutex);
+    return clientNameToIPMap.find(clientName)->second;
 }

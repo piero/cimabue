@@ -13,65 +13,47 @@
 class CimabueServer : public Node
 {
 public:
-	CimabueServer(unsigned short port = NODE_PORT_SERVER_DOWN, bool enablePing = false);
-	virtual ~CimabueServer();
+    CimabueServer(unsigned short port = NODE_PORT_SERVER_DOWN, bool enablePing = false);
+    virtual ~CimabueServer();
 
-	unsigned int getServerPort();
+    unsigned int getServerPort();
 
 private:
-	static void* do_listen(void *myself);
-	int processUpMessage(Message *msg, int skt);
-	int processDownMessage(Message *msg, int skt);
+    static void* do_listen(void *myself);
+    int processUpMessage(Message *msg, int skt);
+    int processDownMessage(Message *msg, int skt);
 
-	// Execute requests
-	Message* executeSendMessage(Message *msg);
-	Message* executeAddProxy(Message *msg);
-	Message* executeRemProxy(Message *msg);
-	Message* executeAddClient(Message *msg);
-	Message* executeRemClient(Message *msg);
+    // Execute requests
+    Message* executeSendMessage(Message *msg);
+    Message* executeAddClient(Message *msg);
+    Message* executeRemClient(Message *msg);
 
-	// Ping connected proxies
-	pthread_t pingProxy_tid;
-	bool pingProxy_is_running;
-	static void* do_pingClient(void *myself);
-	bool ping_enabled;
+    // Ping connected proxies
+    pthread_t pingClient_tid;
+    bool pingClient_is_running;
+    static void* do_pingClient(void *myself);
+    bool ping_enabled;
 
-	// Do I have the Proxy in my list?
-	bool haveProxy(std::string const proxyName);
+    // Do I have the Client in my list?
+    bool haveClient(std::string clientName);
 
-	// Find the Proxy associated to a given Client
-	std::string getProxyWithClient(std::string const clientName);
+    std::string getClientAddress(std::string clientName);
+    void removeClient(std::string clientName);
 
-	// Get the IP of a given Server in serverList
-	std::string getServerAddress(std::string const serverName);
+    // Get the IP of a given Server in serverList
+    std::string getServerAddress(std::string const serverName);
 
-	// Get the Server connected to a given Proxy
-	std::string whoHasProxy(std::string const proxyName);
+    // Association: ServerName -> Server IP address
+    std::map<std::string, std::string> serverNameToIPMap;
+    pthread_mutex_t serverList_mutex;
 
-	// Get the IP of a given Proxy
-	std::string getProxyAddress(std::string const proxyName);
+    // Association: ClientName -> Client IP address
+    std::map<std::string, std::string> clientNameToIPMap;
+    pthread_mutex_t clientList_mutex;
 
-	void removeProxy(std::string proxyName);
-
-	// Association: ServerName -> Server IP address
-	std::map<std::string, std::string> serverList;
-	pthread_mutex_t serverList_mutex;
-
-	// Association: ProxyName -> ServerName
-	std::map<std::string, std::string> proxyServerList;
-	pthread_mutex_t proxyServerList_mutex;
-
-	// Association: ProxyName -> Proxy IP address
-	std::map<std::string, std::string> proxyList;
-	pthread_mutex_t proxyList_mutex;
-
-	// Assiciation: ClientName --> ProxyName
-	std::map<std::string, std::string> clientList;
-	pthread_mutex_t clientList_mutex;
-
-	// Association proxyName --> last_ping_timestamp
-	std::map<std::string, timestamp_t> proxyPingList;
-	pthread_mutex_t proxyPingList_mutex;
+    // Association clientName --> last_ping_timestamp
+    std::map<std::string, timestamp_t> clientPingList;
+    pthread_mutex_t clientPingList_mutex;
 };
 
 

@@ -50,12 +50,12 @@ void CimabueClient::connectToServer(string serverIP)
 
         if (!ret->isErrorMessage())
         {
-            proxy = ret->getServerSource();
+            server = ret->getServerSource();
             connectedToServer = true;
         }
         else
         {
-            log.print(LOG_ERROR, "[!] Error connecting to Proxy: %s\n",
+            log.print(LOG_ERROR, "[!] Error connecting to Server: %s\n",
                       ((ErrorMessage*) ret)->getErrorMessage().c_str());
 
             // Dammit! Retry...
@@ -65,7 +65,7 @@ void CimabueClient::connectToServer(string serverIP)
         delete ret;
     }
 
-    log.print(LOG_INFO, "[ ] Connected to Proxy: %s\n", proxy.c_str());
+    log.print(LOG_INFO, "[ ] Connected to Server: %s\n", server.c_str());
 }
 
 void CimabueClient::setProxyIP(string ip)
@@ -88,7 +88,7 @@ int CimabueClient::sendMessage(string dest, string content)
 
     Message msg(MSG_SEND_MESSAGE,
                 name, dest,
-                MSG_VOID, MSG_VOID,
+                MSG_VOID, server,
                 data_to_send);
 
     Message *reply = msg.Send(server_ip, server_port);
@@ -185,10 +185,10 @@ int CimabueClient::processUpMessage(Message *msg, int skt)
     case MSG_ADD_CLIENT:
         {
             // We've been added to a Server
-            proxy = msg->getServerSource();
+            server = msg->getServerSource();
             connectedToServer = true;
 
-            log.print(LOG_INFO, "[ ] Connected to Proxy (%s)\n", proxy.c_str());
+            log.print(LOG_INFO, "[ ] Connected to Proxy (%s)\n", server.c_str());
         }
         break;
 
