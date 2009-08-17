@@ -1,0 +1,18 @@
+I found the ioctl solution problematic on os x. However getifaddress() will let you do the same thing easily, it works fine for me on os x 10.5 and should be the same below.
+
+I've done a quick example below which will print all of the machine's IPv4 address, would easy enough to make IPv6 compliant (you should also check the getifaddrs was successful ie returns 0).
+
+struct ifaddrs * ifAddrStruct=NULL;
+void * tmpAddrPtr=NULL;
+int i=0;
+
+getifaddrs(&ifAddrStruct));
+
+while (ifAddrStruct!=NULL) {
+  if (ifAddrStruct->ifa_addr->sa_family==AF_INET && strcmp(ifAddrStruct->ifa_name, "lo0")!=0) { // check it is IP4 and not lo0
+    // is a valid IP4 Address
+    tmpAddrPtr=&((struct sockaddr_in *)ifAddrStruct->ifa_addr)->sin_addr;
+    printf("IP Address %s\n", inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, 
+  }
+  ifAddrStruct=ifAddrStruct->ifa_next;
+}
