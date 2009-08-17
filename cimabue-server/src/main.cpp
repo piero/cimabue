@@ -33,8 +33,6 @@ int main(int argc, char *argv[])
 
 	Log::setLogLevel(LOG_DEBUG);
 
-	printf("Creating State Manager...\n");
-
 	StateManager manager(atoi(argv[1]));
 	manager.init();
 
