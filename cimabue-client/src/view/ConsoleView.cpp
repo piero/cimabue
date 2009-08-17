@@ -28,20 +28,28 @@ ConsoleView::~ConsoleView()
 }
 
 
-void ConsoleView::update(event_t event)
+void ConsoleView::update(Event *event)
 {
-    switch (event.type)
+	log.print(LOG_DEBUG, "--> Updating ConsoleView\n");
+
+    switch (event->getType())
     {
     case EVT_CONNECTING:
-        printf("[V] Connecting to %s:%d...\n", model->getServerIP().c_str(), model->getServerPort());
+        printf("[V] Connecting to %s:%d...\n",
+        		((EventConnecting*)event)->getTargetIP(),
+        		((EventConnecting*)event)->getTargetPort());
         break;
 
     case EVT_CONNECTED:
-        printf("[V] Connected to %s:%d\n", model->getServerIP().c_str(), model->getServerPort());
+        printf("[V] Connected to %s:%d\n",
+        		((EventConnected*)event)->getTargetIP(),
+        		((EventConnected*)event)->getTargetPort());
         break;
 
     case EVT_NEW_MESSAGE:
-    	printf("[V] Received new message\n\t%s\n", event.data.c_str());
+    	printf("[V] Received new message\n\t%s: %s\n",
+    			((EventMessage*)event)->getNickname(),
+    			((EventMessage*)event)->getMessage());
         break;
 
     case EVT_UPDATE_CLIENT_LIST:
@@ -54,6 +62,7 @@ void ConsoleView::update(event_t event)
         break;
 
     default:
+    	log.print(LOG_WARNING, "[!] Unhandled event type: %d\n", event->getType());
         break;
     }
 

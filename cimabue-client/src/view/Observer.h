@@ -9,6 +9,7 @@
 #define OBSERVER_H_
 
 #include "../StateManager.h"
+#include <log/Log.h>
 
 class Observer
 {
@@ -16,10 +17,11 @@ public:
     Observer(StateManager *caller);
     virtual ~Observer();
 
-    virtual void update(event_t event) = 0;
+    virtual void update(Event *event) = 0;
 
 protected:
     StateManager *model;
+    Log log;
 };
 
 

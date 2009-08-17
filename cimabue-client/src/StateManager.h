@@ -25,7 +25,7 @@ public:
 
     void addView(Observer *view);
     void remView(Observer *view);
-    void updateViews(event_t event);
+    void updateViews(Event event);
 
     void setServerIP(std::string ip);
     void setServerPort(unsigned short port);

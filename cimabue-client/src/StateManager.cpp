@@ -66,12 +66,12 @@ void StateManager::remView(Observer *view)
     }
 }
 
-void StateManager::updateViews(event_t event)
+void StateManager::updateViews(Event event)
 {
     list<Observer*>::iterator iter;
 
     for (iter = views.begin(); iter != views.end(); iter++)
-        (*iter)->update(event);
+        (*iter)->update(&event);
 }
 
 void StateManager::setServerIP(string ip)

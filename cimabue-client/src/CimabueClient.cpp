@@ -31,7 +31,11 @@ CimabueClient::~CimabueClient()
 
 void CimabueClient::connectToServer(string serverIP)
 {
-    log.print(LOG_INFO, "[CimabueClient] Trying to connect to Server %s...\n", serverIP.c_str());
+    log.print(LOG_INFO, "[ ] Trying to connect to Server %s...\n", serverIP.c_str());
+
+    // Notify views
+    EventConnecting event_connecting(serverIP, server_port);
+    manager->updateViews(event_connecting);
 
     // Concatenate NICKNAME ## IP ## PORT
     char nickname_ip_port[128];
@@ -66,6 +70,10 @@ void CimabueClient::connectToServer(string serverIP)
     }
 
     log.print(LOG_INFO, "[ ] Connected to Server: %s\n", server.c_str());
+
+    // Notify views
+       EventConnected event_connected(serverIP, server_port);
+       manager->updateViews(event_connected);
 }
 
 void CimabueClient::setProxyIP(string ip)
@@ -147,10 +155,9 @@ int CimabueClient::processDownMessage(Message *msg, int skt)
             ack.Reply(skt);
             log.print(LOG_DEBUG, "[ ] Replied to SEND_MESSAGE request\n");
 
-            event_t ev;
-            ev.type = EVT_NEW_MESSAGE;
-            ev.data = msg->getData();
-            manager->updateViews(ev);
+            // Notify views
+            EventMessage event(sender_nick, msg_content);
+            manager->updateViews(event);
         }
         break;
 
