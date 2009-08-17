@@ -12,6 +12,7 @@
 
 using namespace std;
 
+// SIGINT handler
 bool quit = false;
 
 void sigint_handler(int sig)
