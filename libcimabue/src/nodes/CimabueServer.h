@@ -33,7 +33,7 @@ private:
 	// Ping connected proxies
 	pthread_t pingProxy_tid;
 	bool pingProxy_is_running;
-	static void* do_pingProxy(void *myself);
+	static void* do_pingClient(void *myself);
 	bool ping_enabled;
 
 	// Do I have the Proxy in my list?

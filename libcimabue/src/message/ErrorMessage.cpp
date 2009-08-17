@@ -25,13 +25,11 @@ ErrorMessage::ErrorMessage(string error_msg)
 
 ErrorMessage::ErrorMessage(string fromClient,
                            string toClient,
-                           string fromProxy,
-                           string toProxy,
                            string fromServer,
                            string toServer,
                            string content,
                            message_priority_t msg_priority)
-        : Message(MSG_ERROR, fromClient, toClient, fromProxy, toProxy, fromServer, toServer, content, msg_priority)
+        : Message(MSG_ERROR, fromClient, toClient, fromServer, toServer, content, msg_priority)
 {}
 
 

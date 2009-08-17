@@ -26,7 +26,7 @@ CimabueServer::CimabueServer(unsigned short port, bool enablePing) :
     if (ping_enabled)
     {
         // Ping connected clients
-        if (pthread_create(&pingProxy_tid, NULL, do_pingProxy, this) != 0)
+        if (pthread_create(&pingProxy_tid, NULL, do_pingClient, this) != 0)
         {
             log.print(LOG_ERROR, "[!] Error creating pinging thread\n");
         }
@@ -52,7 +52,7 @@ CimabueServer::~CimabueServer()
 }
 
 
-void* CimabueServer::do_pingProxy(void *myself)
+void* CimabueServer::do_pingClient(void *myself)
 {
     CimabueServer *me = (CimabueServer*) myself;
     me->pingProxy_is_running = true;
@@ -67,8 +67,7 @@ void* CimabueServer::do_pingProxy(void *myself)
         {
             me->log.print(LOG_DEBUG, "[ ] Pinging %s...\n", proxy_iter->first.c_str());
 
-            Message ping(MSG_PING_PROXY,
-                         MSG_VOID, MSG_VOID,
+            Message ping(MSG_PING_CLIENT,
                          MSG_VOID, proxy_iter->first,
                          me->name, MSG_VOID,
                          MSG_VOID);
@@ -145,12 +144,12 @@ int CimabueServer::processDownMessage(Message *msg, int skt)
     int ret = NODE_RET_ERROR;
     Message *answer = NULL;
 
-    log.print(LOG_INFO, "[ ] Processing message from a PROXY\n");
+    log.print(LOG_INFO, "[ ] Processing message from a CLIENT\n");
 
     // A new proxy doesn't know our name, but only our IP address
-    if (msg->getType() == MSG_ADD_PROXY)
+    if (msg->getType() == MSG_ADD_CLIENT)
     {
-        answer = executeAddProxy(msg);
+        answer = executeAddClient(msg);
     }
 
     // Check whether the message was addressed to us
@@ -168,10 +167,6 @@ int CimabueServer::processDownMessage(Message *msg, int skt)
         {
         case MSG_SEND_MESSAGE:
             answer = executeSendMessage(msg);
-            break;
-
-        case MSG_REM_PROXY:
-            answer = executeRemProxy(msg);
             break;
 
         case MSG_ADD_CLIENT:
@@ -243,7 +238,7 @@ Message* CimabueServer::executeSendMessage(Message *msg)
         Message *forward_msg = new Message();
         msg->copy(*forward_msg);
         forward_msg->setServerSource(name);
-        forward_msg->setProxyDest(proxy);
+        forward_msg->setClientDest(proxy);
 
         Message *reply = forward_msg->Send(getProxyAddress(proxy), NODE_PORT_PROXY_UP);
 
@@ -263,45 +258,6 @@ Message* CimabueServer::executeSendMessage(Message *msg)
     }
 }
 
-Message* CimabueServer::executeAddProxy(Message *msg)
-{
-    // Add Proxy to related lists
-    pthread_mutex_lock(&proxyList_mutex);
-    proxyList.insert(pair<string, string> (msg->getProxySource(),
-                                           msg->getData()));
-    pthread_mutex_unlock(&proxyList_mutex);
-
-    pthread_mutex_lock(&proxyServerList_mutex);
-    proxyServerList.insert(pair<string, string> (msg->getProxySource(), name));
-    pthread_mutex_unlock(&proxyServerList_mutex);
-
-    pthread_mutex_lock(&proxyPingList_mutex);
-    proxyPingList.insert(pair<string, timestamp_t> (msg->getProxySource(), getTimestamp()));
-
-    log.print(LOG_INFO, "[+] Added Proxy %s --> %s (%d proxies)\n",
-              msg->getProxySource().c_str(), msg->getData().c_str(), proxyPingList.size());
-    pthread_mutex_unlock(&proxyPingList_mutex);
-
-    Message *reply = new Message(MSG_ADD_PROXY,
-                                 MSG_VOID, MSG_VOID,
-                                 MSG_VOID, msg->getProxySource(),
-                                 name, MSG_VOID,
-                                 MSG_VOID);
-    return reply;
-}
-
-Message* CimabueServer::executeRemProxy(Message *msg)
-{
-    Message *reply = NULL;
-
-    removeProxy(msg->getProxySource());
-
-    reply = new Message();
-    msg->copy(*reply);
-
-    return reply;
-}
-
 Message* CimabueServer::executeAddClient(Message *msg)
 {
     Message *reply = NULL;
@@ -309,18 +265,17 @@ Message* CimabueServer::executeAddClient(Message *msg)
     // Add client to list
     pthread_mutex_lock(&clientList_mutex);
     clientList.insert(pair<string, string> (msg->getData(),
-                                            msg->getProxySource()));
+                                            msg->getClientSource()));
 
     log.print(LOG_INFO, "[+] Added Client %s --> %s (%d clients)\n",
-              msg->getData().c_str(), msg->getProxySource().c_str(),
+              msg->getData().c_str(), msg->getClientSource().c_str(),
               clientList.size());
 
     pthread_mutex_unlock(&clientList_mutex);
 
     // Reply to Proxy
     reply = new Message(MSG_ADD_CLIENT,
-                        MSG_VOID, MSG_VOID,
-                        MSG_VOID, msg->getProxySource(),
+                        MSG_VOID, msg->getClientSource(),
                         name, MSG_VOID,
                         msg->getData());
 

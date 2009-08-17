@@ -23,13 +23,10 @@ typedef enum
     MSG_NONE = 0,
     MSG_ADD_CLIENT,        	// add a client
     MSG_REM_CLIENT,        	// remove a client
-    MSG_ADD_PROXY,        	// add a proxy
-    MSG_REM_PROXY,        	// remove a proxy
     MSG_SEND_MESSAGE,       // send a message
     MSG_GET_CLIENT_LIST,    // a proxy or a server requests client list from server
     MSG_SET_CLIENT_LIST,    // send client list (server)
     MSG_PING_CLIENT,		// Ping a client to verify its connection
-    MSG_PING_PROXY,			// Ping a proxy to verify its connection
     MSG_USER,				// user-specific
     MSG_ERROR
 } message_t;
@@ -70,8 +67,6 @@ public:
 	Message(message_t msg_type,
 	        std::string fromClient,
 	        std::string toClient,
-	        std::string fromProxy,
-	        std::string toProxy,
 	        std::string fromServer,
 	        std::string toServer,
 	        std::string content,
@@ -96,14 +91,6 @@ public:
 	// Client Dest
 	virtual std::string getClientDest();
 	virtual void setClientDest(std::string d);
-
-	// Proxy Source
-	virtual std::string getProxySource();
-	virtual void setProxySource(std::string s);
-
-	// Proxy Dest
-	virtual std::string getProxyDest();
-	virtual void setProxyDest(std::string d);
 
 	// Server Source
 	virtual std::string getServerSource();
@@ -137,8 +124,6 @@ protected:
 	message_t type; 			// Message type
 	std::string clientSrc;		 	// Message source
 	std::string clientDest;			// Message destination
-	std::string proxySrc;
-	std::string proxyDest;
 	std::string serverSrc;
 	std::string serverDest;
 	std::string data;			// Message content
@@ -147,7 +132,6 @@ protected:
 	double id;
 
 	Log messageLog;
-
 
 	virtual message_t encodeType(std::string s);
 	virtual std::string decodeType(message_t t);

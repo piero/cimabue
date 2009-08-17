@@ -35,10 +35,9 @@ void CimabueClient::connectToServer(string serverIP)
 	memset(nickname_ip_port, 0, 128);
 	sprintf(nickname_ip_port, "%s:%s:%d", nickname.c_str(), ip.c_str(), portList[DOWN_PORT]);
 
-	// Send message to server
+	// Send message to Server
 	Message connectMe(MSG_ADD_CLIENT,
 	                  name, MSG_VOID,
-	                  MSG_VOID, MSG_VOID,
 	                  MSG_VOID, MSG_VOID,
 	                  nickname_ip_port);
 
@@ -48,7 +47,7 @@ void CimabueClient::connectToServer(string serverIP)
 
 		if (!ret->isErrorMessage())
 		{
-			proxy = ret->getProxySource();
+			proxy = ret->getServerSource();
 			connectedToServer = true;
 		}
 		else
@@ -86,7 +85,6 @@ int CimabueClient::sendMessage(string dest, string content)
 
 	Message msg(MSG_SEND_MESSAGE,
 	            name, dest,
-	            MSG_VOID, proxy,
 	            MSG_VOID, MSG_VOID,
 	            data_to_send);
 
@@ -183,8 +181,8 @@ int CimabueClient::processUpMessage(Message *msg, int skt)
 	{
 	case MSG_ADD_CLIENT:
 		{
-			// We've been added to a Proxy
-			proxy = msg->getProxySource();
+			// We've been added to a Server
+			proxy = msg->getServerSource();
 			connectedToServer = true;
 
 			log.print(LOG_INFO, "[ ] Connected to Proxy (%s)\n", proxy.c_str());

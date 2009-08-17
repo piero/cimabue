@@ -20,8 +20,6 @@ public:
     ErrorMessage(std::string fromClient,
 	        std::string toClient,
 	        std::string fromProxy,
-	        std::string toProxy,
-	        std::string fromServer,
 	        std::string toServer,
 	        std::string content,
 	        message_priority_t msg_priority = MSG_PRIORITY_NORMAL);
