@@ -69,7 +69,6 @@ public:
 
 	virtual ~Message();
 
-	//virtual int Recv(std::string ip, unsigned int port);	// receive a message
 	virtual Message* Send(std::string ip, unsigned int port);
 	virtual int Recv(int skt);	// receive a message
 	virtual int Reply(int skt);	// reply to a message

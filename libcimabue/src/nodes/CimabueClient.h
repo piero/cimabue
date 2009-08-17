@@ -27,7 +27,6 @@ public:
     void setProxyIP(std::string ip);
     std::string getProxyIP();
 
-    void setNickname(std::string nick);
     std::string getNickname();
 
 private:

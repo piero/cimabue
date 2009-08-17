@@ -188,7 +188,7 @@ int CimabueClient::processUpMessage(Message *msg, int skt)
             server = msg->getServerSource();
             connectedToServer = true;
 
-            log.print(LOG_INFO, "[ ] Connected to Proxy (%s)\n", server.c_str());
+            log.print(LOG_INFO, "[ ] Connected to Server (%s)\n", server.c_str());
         }
         break;
 
@@ -204,11 +204,6 @@ int CimabueClient::processUpMessage(Message *msg, int skt)
         log.print(LOG_PARANOID, "[x] Socket %d\n", skt);
 
     return RET_SUCCESS;
-}
-
-void CimabueClient::setNickname(string nick)
-{
-    nickname = nick;
 }
 
 string CimabueClient::getNickname()
