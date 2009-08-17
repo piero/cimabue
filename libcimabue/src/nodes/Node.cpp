@@ -47,7 +47,7 @@ Node::Node(unsigned short upPort,
     pthread_create(&process_thread, NULL, do_process_thread, this);
     pthread_create(&listen_thread, NULL, do_listen_thread, this);
 
-    log.print(LOG_INFO, "Created node %s (%s:%d-%d)\n", name.c_str(),
+    log.print(LOG_INFO, "[ ] Created node %s (%s:%d-%d)\n", name.c_str(),
               ip.c_str(), portList[UP_PORT], portList[DOWN_PORT]);
 }
 
@@ -173,7 +173,7 @@ int Node::CreateListeningSocket(unsigned short port)
 {
     int newSkt;
 
-    log.print(LOG_DEBUG, "[ ] Creating socket on port %d...\n", port);
+    log.print(LOG_PARANOID, "[ ] Creating socket on port %d...\n", port);
 
     if ((newSkt = socket(PF_INET, SOCK_STREAM, 0)) < 0)
     {

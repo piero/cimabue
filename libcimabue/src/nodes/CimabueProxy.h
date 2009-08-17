@@ -13,7 +13,7 @@
 class CimabueProxy : public Node
 {
 public:
-    CimabueProxy(unsigned short localPort, std::string serverAddress, unsigned short serverPort = NODE_PORT_SERVER_DOWN, bool enablePing = true, bool enableServerLookup = true);
+    CimabueProxy(unsigned short localPort, std::string serverAddress, unsigned short serverPort = NODE_PORT_SERVER_DOWN, bool enablePing = false, bool enableServerLookup = false);
     virtual ~CimabueProxy();
 
     std::string getCurrentServer();

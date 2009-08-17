@@ -21,6 +21,9 @@ CimabueProxy::CimabueProxy(unsigned short localPort, std::string serverAddress, 
     server_lookup_enabled = enableServerLookup;
     server_port = serverPort;
 
+    log.print(LOG_DEBUG, "[ ] Creating CimabueProxy (%d, %d) --> (%s:%d)...\n",
+    		portList[UP_PORT], portList[DOWN_PORT], currentServerIP.c_str(), server_port);
+
     pthread_mutex_init(&clientList_mutex, NULL);
     pthread_mutex_init(&clientPingList_mutex, NULL);
     pthread_mutex_init(&clientNicknames_mutex, NULL);
@@ -81,7 +84,7 @@ CimabueProxy::~CimabueProxy()
 
 void CimabueProxy::connectToServer(string serverIP)
 {
-    log.print(LOG_INFO, "Connecting to Server %s...\n", serverIP.c_str());
+    log.print(LOG_INFO, "[ ] Connecting to Server %s:%d...\n", serverIP.c_str(), server_port);
 
     // Send message to server
     Message connectMe(MSG_ADD_PROXY,

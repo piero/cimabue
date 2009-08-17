@@ -144,6 +144,7 @@ Message* Message::Send(std::string ip, unsigned int port)
 	struct timeval timeout;
 	timeout.tv_sec = 5;
 	timeout.tv_usec = 0;
+	setsockopt(skt, SOL_SOCKET, SO_SNDTIMEO, (void*)&timeout, sizeof(timeout));
 	setsockopt(skt, SOL_SOCKET, SO_RCVTIMEO, (void*)&timeout, sizeof(timeout));
 
 	struct sockaddr_in serverAddr;
