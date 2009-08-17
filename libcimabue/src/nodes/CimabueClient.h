@@ -15,31 +15,36 @@
 class CimabueClient : public Node
 {
 public:
-	CimabueClient(unsigned short local_port, std::string server_address, unsigned short server_port = NODE_PORT_SERVER_UP);
-	virtual ~CimabueClient();
+    CimabueClient(std::string nick,
+                  unsigned short local_port,
+                  std::string server_address,
+                  unsigned short server_port = NODE_PORT_SERVER_UP);
 
-	int sendMessage(std::string dest, std::string content);
+    virtual ~CimabueClient();
 
-	void setProxyIP(std::string ip);
-	std::string getProxyIP();
+    int sendMessage(std::string dest, std::string content);
 
-	std::string getNickname();
+    void setProxyIP(std::string ip);
+    std::string getProxyIP();
+
+    void setNickname(std::string nick);
+    std::string getNickname();
 
 private:
-	static void* do_listen(void *myself);
-	int processUpMessage(Message *msg, int skt);
-	int processDownMessage(Message *msg, int skt);
+    static void* do_listen(void *myself);
+    int processUpMessage(Message *msg, int skt);
+    int processDownMessage(Message *msg, int skt);
 
-	void extractNicknameAndData(std::string s, std::string &nick, std::string &data);
+    void extractNicknameAndData(std::string s, std::string &nick, std::string &data);
 
-	void connectToServer(std::string proxyIP);
+    void connectToServer(std::string proxyIP);
 
-	bool connectedToServer;
+    bool connectedToServer;
 
-	std::string nickname;
-	std::string proxy;
-	std::string server_ip;
-	unsigned int server_port;
+    std::string nickname;
+    std::string proxy;
+    std::string server_ip;
+    unsigned int server_port;
 };
 
 

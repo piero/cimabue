@@ -17,7 +17,7 @@ class Observer;
 class StateManager
 {
 public:
-    StateManager(unsigned short local_port, std::string ip, unsigned short port);
+    StateManager();
     virtual ~StateManager();
 
     void setState(ClientState *newState);
@@ -37,13 +37,16 @@ public:
     bool isConnected();
 
     void handleInput();
-    void init();
+    void init(std::string nick, unsigned int localPort, std::string serverIP, unsigned int serverPort);
+
+    CimabueClient* getConnector();
 
 private:
     ClientState *current_state;
     CimabueClient *connector;
     std::list<Observer*> views;
 
+    std::string nickname;
     unsigned short client_port;
     std::string server_ip;
     unsigned short server_port;

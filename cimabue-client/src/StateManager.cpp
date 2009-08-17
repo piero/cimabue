@@ -10,12 +10,9 @@
 
 using namespace std;
 
-StateManager::StateManager(unsigned short local_port, std::string ip, unsigned short port)
+StateManager::StateManager()
         : current_state(NULL),
         connector(NULL),
-        client_port(local_port),
-        server_ip(ip),
-        server_port(port),
         connected(false)
 {}
 
@@ -104,7 +101,7 @@ bool StateManager::isConnected()
 
 void StateManager::connectToServer()
 {
-    connector = new CimabueClient(client_port, server_ip, server_port);
+    connector = new CimabueClient(nickname, client_port, server_ip, server_port);
 
     if (connector != NULL)
         connected = true;
@@ -115,9 +112,25 @@ void StateManager::handleInput()
     current_state->handleInput();
 }
 
-void StateManager::init()
+void StateManager::init(string nick, unsigned int localPort, string serverIP, unsigned int serverPort)
 {
     log.print(LOG_DEBUG, "[ ] StateManager::init()\n");
 
+    if (connected && connector != NULL)
+    {
+        delete connector;
+        connected = false;
+    }
+
+    nickname = nick;
+    client_port = localPort;
+    server_ip = serverIP;
+    server_port = serverPort;
+
     setState(new StateInit(this));
+}
+
+CimabueClient* StateManager::getConnector()
+{
+    return connector;
 }

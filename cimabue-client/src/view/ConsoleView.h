@@ -21,9 +21,9 @@ public:
 
 private:
     bool kill_console;
-    pthread_t input_thread;
-    bool input_thread_is_running;
-    static void* do_input_thread(void *arg);
+    pthread_t console_thread;
+    bool console_thread_is_running;
+    static void* do_console_thread(void *arg);
 };
 
 
