@@ -37,6 +37,7 @@ public:
     bool isConnected();
 
     void handleInput();
+    void init();
 
 private:
     ClientState *current_state;

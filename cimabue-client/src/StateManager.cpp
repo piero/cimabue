@@ -11,7 +11,8 @@
 using namespace std;
 
 StateManager::StateManager(unsigned short local_port, std::string ip, unsigned short port)
-        : proxy(NULL),
+        : current_state(NULL),
+        proxy(NULL),
         client_port(local_port),
         server_ip(ip),
         server_port(port),
@@ -20,13 +21,22 @@ StateManager::StateManager(unsigned short local_port, std::string ip, unsigned s
 
 StateManager::~StateManager()
 {
-	// Empty views
-	views.empty();
+    // Empty views
+    views.empty();
 }
 
 void StateManager::setState(ClientState *newState)
 {
+    if (current_state != NULL)
+    {
+        log.print(LOG_DEBUG, "[ ] %s --> ", current_state->getName().c_str());
+        current_state->onExit();
+    }
+
     current_state = newState;
+    log.print(LOG_DEBUG, "%s\n", current_state->getName().c_str());
+
+    current_state->onEntry();
 }
 
 ClientState* StateManager::getState()
@@ -61,10 +71,10 @@ void StateManager::remView(Observer *view)
 
 void StateManager::updateViews()
 {
-	list<Observer*>::iterator iter;
+    list<Observer*>::iterator iter;
 
-	for (iter = views.begin(); iter != views.end(); iter++)
-		(*iter)->update();
+    for (iter = views.begin(); iter != views.end(); iter++)
+        (*iter)->update();
 }
 
 void StateManager::setServerIP(string ip)
@@ -89,18 +99,25 @@ unsigned short StateManager::getServerPort()
 
 bool StateManager::isConnected()
 {
-	return connected;
+    return connected;
 }
 
 void StateManager::connectToServer()
 {
-	proxy = new CimabueProxy(client_port, server_ip, server_port);
+    proxy = new CimabueProxy(client_port, server_ip, server_port);
 
-	if (proxy != NULL)
-		connected = true;
+    if (proxy != NULL)
+        connected = true;
 }
 
 void StateManager::handleInput()
 {
-	current_state->handleInput();
+    current_state->handleInput();
+}
+
+void StateManager::init()
+{
+    log.print(LOG_DEBUG, "[ ] StateManager::init()\n");
+
+    setState(new StateInit(this));
 }

@@ -14,14 +14,10 @@ ClientState::ClientState(StateManager *caller, state_t id)
         : manager(caller),
         stateID(id),
         last_event(EVT_NONE)
-{
-    onEntry();
-}
+{}
 
 ClientState::~ClientState()
-{
-    onExit();
-}
+{}
 
 state_t ClientState::getID()
 {

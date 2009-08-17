@@ -17,8 +17,6 @@ public:
     virtual ~StateConnecting();
 
     void handleInput();
-
-protected:
     void onEntry();
     void onExit();
 };

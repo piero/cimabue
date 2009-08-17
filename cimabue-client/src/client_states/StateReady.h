@@ -17,8 +17,6 @@ public:
     virtual ~StateReady();
 
     void handleInput();
-
-protected:
     void onEntry();
     void onExit();
 };
