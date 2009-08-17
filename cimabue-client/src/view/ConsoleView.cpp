@@ -20,11 +20,11 @@ void ConsoleView::update()
     switch (model->getState()->getLastEvent())
     {
     case EVT_CONNECTING:
-    	printf("[ ] Connecting to %s:%d...\n", model->getServerIP().c_str(), model->getServerPort());
+    	printf("[V] Connecting to %s:%d...\n", model->getServerIP().c_str(), model->getServerPort());
     	break;
 
     case EVT_CONNECTED:
-    	printf("[ ] Connected to %s:%d\n", model->getServerIP().c_str(), model->getServerPort());
+    	printf("[V] Connected to %s:%d\n", model->getServerIP().c_str(), model->getServerPort());
     	break;
 
     case EVT_NEW_MESSAGE:

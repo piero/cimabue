@@ -6,6 +6,7 @@
 */
 
 #include "StateConnecting.h"
+#include "StateReady.h"
 #include "../StateManager.h"
 
 StateConnecting::StateConnecting(StateManager *caller)
@@ -22,6 +23,14 @@ void StateConnecting::onEntry()
 	manager->updateViews();
 
 	manager->connectToServer();
+
+	// Notify views
+	last_event = EVT_CONNECTED;
+	manager->updateViews();
+
+	// Go to Ready state
+	manager->setState(new StateReady(manager));
+	delete this;
 }
 
 void StateConnecting::onExit()
