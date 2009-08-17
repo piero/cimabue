@@ -15,7 +15,7 @@
 class CimabueClient : public Node
 {
 public:
-	CimabueClient(std::string nick, std::string proxy_address, unsigned short port = NODE_PORT_CLIENT_UP);
+	CimabueClient(unsigned short local_port, std::string server_address, unsigned short server_port = NODE_PORT_SERVER_UP);
 	virtual ~CimabueClient();
 
 	int sendMessage(std::string dest, std::string content);
@@ -32,13 +32,14 @@ private:
 
 	void extractNicknameAndData(std::string s, std::string &nick, std::string &data);
 
-	void connectToProxy(std::string proxyIP);
+	void connectToServer(std::string proxyIP);
 
-	bool connectedToProxy;
+	bool connectedToServer;
 
 	std::string nickname;
 	std::string proxy;
-	std::string proxy_ip;
+	std::string server_ip;
+	unsigned int server_port;
 };
 
 

@@ -9,15 +9,16 @@
 
 using namespace std;
 
-CimabueClient::CimabueClient(string nick, string proxy_address, unsigned short port) :
-		Node(port + 1, port)
+CimabueClient::CimabueClient(unsigned short localPort, string serverIP, unsigned short serverPort) :
+		Node(localPort + 1, localPort)
 {
-	connectedToProxy = false;
-	proxy_ip = proxy_address;
-	nickname = nick;
+	connectedToServer = false;
+	server_ip = serverIP;
+	server_port = serverPort;
+	nickname = "";
 
-	// Connect to Proxy
-	connectToProxy(proxy_ip);
+	// Connect to Server
+	connectToServer(server_ip);
 }
 
 CimabueClient::~CimabueClient()
@@ -25,9 +26,9 @@ CimabueClient::~CimabueClient()
 	die = true;
 }
 
-void CimabueClient::connectToProxy(string proxyIP)
+void CimabueClient::connectToServer(string serverIP)
 {
-	log.print(LOG_INFO, "Trying to connect to Proxy %s...\n", proxyIP.c_str());
+	log.print(LOG_INFO, "[CimabueClient] Trying to connect to Server %s...\n", serverIP.c_str());
 
 	// Concatenate NICKNAME ## IP ## PORT
 	char nickname_ip_port[128];
@@ -41,14 +42,14 @@ void CimabueClient::connectToProxy(string proxyIP)
 	                  MSG_VOID, MSG_VOID,
 	                  nickname_ip_port);
 
-	while (!connectedToProxy)
+	while (!connectedToServer)
 	{
-		Message *ret = connectMe.Send(proxyIP, NODE_PORT_PROXY_DOWN);
+		Message *ret = connectMe.Send(serverIP, server_port);
 
 		if (!ret->isErrorMessage())
 		{
 			proxy = ret->getProxySource();
-			connectedToProxy = true;
+			connectedToServer = true;
 		}
 		else
 		{
@@ -67,12 +68,12 @@ void CimabueClient::connectToProxy(string proxyIP)
 
 void CimabueClient::setProxyIP(string ip)
 {
-	proxy_ip = ip;
+	server_ip = ip;
 }
 
 string CimabueClient::getProxyIP()
 {
-	return proxy_ip;
+	return server_ip;
 }
 
 int CimabueClient::sendMessage(string dest, string content)
@@ -89,7 +90,7 @@ int CimabueClient::sendMessage(string dest, string content)
 	            MSG_VOID, MSG_VOID,
 	            data_to_send);
 
-	Message *reply = msg.Send(proxy_ip, NODE_PORT_PROXY_DOWN);
+	Message *reply = msg.Send(server_ip, server_port);
 
 	if (reply->isErrorMessage())
 	{
@@ -184,7 +185,7 @@ int CimabueClient::processUpMessage(Message *msg, int skt)
 		{
 			// We've been added to a Proxy
 			proxy = msg->getProxySource();
-			connectedToProxy = true;
+			connectedToServer = true;
 
 			log.print(LOG_INFO, "[ ] Connected to Proxy (%s)\n", proxy.c_str());
 		}
