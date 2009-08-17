@@ -12,7 +12,7 @@ using namespace std;
 
 StateManager::StateManager(unsigned short local_port, std::string ip, unsigned short port)
         : current_state(NULL),
-        proxy(NULL),
+        connector(NULL),
         client_port(local_port),
         server_ip(ip),
         server_port(port),
@@ -104,9 +104,9 @@ bool StateManager::isConnected()
 
 void StateManager::connectToServer()
 {
-    proxy = new CimabueProxy(client_port, server_ip, server_port);
+    connector = new CimabueClient(client_port, server_ip, server_port);
 
-    if (proxy != NULL)
+    if (connector != NULL)
         connected = true;
 }
 

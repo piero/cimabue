@@ -9,15 +9,10 @@
 
 StateReady::StateReady(StateManager *caller)
 : ClientState(caller, STATE_READY)
-{
-    // TODO Auto-generated constructor stub
-
-}
+{}
 
 StateReady::~StateReady()
-{
-    // TODO Auto-generated destructor stub
-}
+{}
 
 
 void StateReady::onEntry()

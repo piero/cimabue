@@ -9,7 +9,7 @@
 #define STATEMANAGER_H_
 
 #include "client_states/StateInit.h"
-#include "nodes/CimabueProxy.h"
+#include "nodes/CimabueClient.h"
 #include <list>
 
 class Observer;
@@ -41,7 +41,7 @@ public:
 
 private:
     ClientState *current_state;
-    CimabueProxy *proxy;
+    CimabueClient *connector;
     std::list<Observer*> views;
 
     unsigned short client_port;
