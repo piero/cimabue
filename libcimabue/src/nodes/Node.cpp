@@ -297,7 +297,7 @@ string Node::parseNickname(string nodeData)
     return nickname;
 }
 
-bool Node::parseNicknameAndIP(string *nickname, string *ip)
+bool Node::parseNicknameAndName(string *nickname, string *node_name)
 {
     bool retval = false;
 
@@ -308,7 +308,7 @@ bool Node::parseNicknameAndIP(string *nickname, string *ip)
         *nickname = tokens.front();
         tokens.pop_front();
 
-        *ip = tokens.front();
+        *node_name = tokens.front();
 
         retval = true;
     }

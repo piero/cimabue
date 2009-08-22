@@ -167,15 +167,19 @@ int CimabueClient::processDownMessage(Message *msg, int skt)
 
             // Update Client list
             string nickname = msg->getData();
-            string ip;
+            string node_name;
 
-            if (parseNicknameAndIP(&nickname, &ip))
+            if (parseNicknameAndName(&nickname, &node_name))
             {
                 clientNickToNameMap.insert(pair<string, string>
-                                           (nickname, ip));
+                                           (nickname, node_name));
 
                 log.print(LOG_DEBUG, "[ ] Added (%s, %s) to client list\n",
-                          nickname.c_str(), ip.c_str());
+                          nickname.c_str(), node_name.c_str());
+
+                // Notify views
+                EventUpdateAdd event(nickname);
+                manager->updateViews(event);
             }
 
             Message ack;

@@ -30,29 +30,34 @@ ConsoleView::~ConsoleView()
 
 void ConsoleView::update(Event *event)
 {
-	log.print(LOG_DEBUG, "--> Updating ConsoleView\n");
+    log.print(LOG_DEBUG, "--> Updating ConsoleView\n");
 
     switch (event->getType())
     {
     case EVT_CONNECTING:
         printf("[V] Connecting to %s:%d...\n",
-        		((EventConnecting*)event)->getTargetIP(),
-        		((EventConnecting*)event)->getTargetPort());
+               ((EventConnecting*)event)->getTargetIP(),
+               ((EventConnecting*)event)->getTargetPort());
         break;
 
     case EVT_CONNECTED:
         printf("[V] Connected to %s:%d\n",
-        		((EventConnected*)event)->getTargetIP(),
-        		((EventConnected*)event)->getTargetPort());
+               ((EventConnected*)event)->getTargetIP(),
+               ((EventConnected*)event)->getTargetPort());
         break;
 
     case EVT_NEW_MESSAGE:
-    	printf("[V] Received new message\n\t%s: %s\n",
-    			((EventMessage*)event)->getNickname(),
-    			((EventMessage*)event)->getMessage());
+        printf("[V] Received new message\n\t%s: %s\n",
+               ((EventMessage*)event)->getNickname(),
+               ((EventMessage*)event)->getMessage());
         break;
 
     case EVT_UPDATE_CLIENT_LIST:
+        printf("[V] A new client joined\n\t%s\n",
+               ((EventMessage*)event)->getNickname());
+
+        clients.push_back(((EventMessage*)event)->getNickname());
+        dumpClients();
         break;
 
     case EVT_UPDATE_SERVER:
@@ -62,7 +67,7 @@ void ConsoleView::update(Event *event)
         break;
 
     default:
-    	log.print(LOG_WARNING, "[!] Unhandled event type: %d\n", event->getType());
+        log.print(LOG_WARNING, "[!] Unhandled event type: %d\n", event->getType());
         break;
     }
 
@@ -121,4 +126,16 @@ void* ConsoleView::do_console_thread(void *arg)
 
     me->console_thread_is_running = false;
     pthread_exit(0);
+}
+
+void ConsoleView::dumpClients()
+{
+	list<string>::iterator iter;
+
+	printf("CLIENTS:\n");
+
+	for (iter = clients.begin(); iter != clients.end(); ++iter)
+		printf("[V] * %s\n", iter->c_str());
+
+	printf("\n");
 }

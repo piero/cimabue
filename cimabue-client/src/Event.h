@@ -24,14 +24,12 @@ typedef enum
     EVT_UPDATE_SERVER
 } event_type_t;
 
-
 typedef struct
 {
     char nickname[128];
     char message[1024];
 }
 event_message_data_t;
-
 
 typedef struct
 {
@@ -40,6 +38,10 @@ typedef struct
 }
 event_connection_data_t;
 
+typedef struct
+{
+	char nickname[128];
+} event_update_clients_t;
 
 typedef struct
 {
@@ -49,6 +51,7 @@ typedef struct
     {
         event_message_data_t msg;
         event_connection_data_t connect;
+        event_update_clients_t update;
     } data;
 
 }
@@ -96,6 +99,14 @@ public:
 
 	char* getTargetIP();
 	unsigned getTargetPort();
+};
+
+class EventUpdateAdd : public Event
+{
+public:
+	EventUpdateAdd(std::string nickname);
+
+	char* getNickname();
 };
 
 #endif /* EVENT_H_ */

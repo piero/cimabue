@@ -10,6 +10,7 @@
 
 #include "Observer.h"
 #include <iostream>
+#include <list>
 
 class ConsoleView : public Observer
 {
@@ -24,6 +25,10 @@ private:
     pthread_t console_thread;
     bool console_thread_is_running;
     static void* do_console_thread(void *arg);
+
+    std::list<std::string> clients;
+
+    void dumpClients();
 };
 
 

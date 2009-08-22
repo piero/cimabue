@@ -69,8 +69,8 @@ public:
 
 protected:
 
-    // Parse nicknane and IP (but not port)
-    bool parseNicknameAndIP(std::string *nickname, std::string *ip);
+    // Parse nicknane and Node name
+    bool parseNicknameAndName(std::string *nickname, std::string *node_name);
 
     // Extract Nickname from nodeData
     std::string parseNickname(std::string nodeData);

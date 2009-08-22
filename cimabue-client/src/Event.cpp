@@ -17,7 +17,7 @@ Event::Event(event_type_t event_type)
 
 Event::~Event()
 {
-	log.print(LOG_PARANOID, "[x] Deleting Event 0x%x\n", this);
+    log.print(LOG_PARANOID, "[x] Deleting Event 0x%x\n", this);
 }
 
 event_type_t Event::getType()
@@ -48,7 +48,6 @@ char* EventMessage::getMessage()
 }
 
 
-
 EventConnecting::EventConnecting(string target_ip, unsigned target_port)
         : Event(EVT_CONNECTING)
 {
@@ -71,7 +70,6 @@ unsigned EventConnecting::getTargetPort()
 }
 
 
-
 EventConnected::EventConnected(string target_ip, unsigned target_port)
         : Event(EVT_CONNECTED)
 {
@@ -91,4 +89,19 @@ char* EventConnected::getTargetIP()
 unsigned EventConnected::getTargetPort()
 {
     return event.data.connect.server_port;
+}
+
+
+EventUpdateAdd::EventUpdateAdd(string nickname)
+        : Event(EVT_UPDATE_CLIENT_LIST)
+{
+    log.print(LOG_PARANOID, "[+] New EventUpdateAdd: 0x%x\n", this);
+
+    memset(event.data.msg.nickname, 0, 128);
+    strncpy(event.data.msg.nickname, nickname.c_str(), nickname.length());
+}
+
+char* EventUpdateAdd::getNickname()
+{
+    return event.data.msg.nickname;
 }
