@@ -69,13 +69,19 @@ public:
 
 protected:
 
+    // Parse nicknane and IP (but not port)
+    bool parseNicknameAndIP(std::string *nickname, std::string *ip);
+
+    // Extract Nickname from nodeData
+    std::string parseNickname(std::string nodeData);
+
     // Extract IP and PORT from nodeAddress
     // and put the result in nodeAddress (overwriting it) and nodePort
     bool parseAddress(std::string *nodeAddress, unsigned int *nodePort);
 
     // Extract nickname, IP and Port from nodeAddress
     // and put the result in nodeNickname, nodeAddress (overwriting it) and nodePort
-    bool parseNameAndAddress(std::string *nodeNickname, std::string *nodeAddress, unsigned int *nodePort);
+    bool parseNicknameAndAddress(std::string *nodeNickname, std::string *nodeAddress, unsigned int *nodePort);
 
     static void* do_listen_thread(void *arg);
     static void* do_process_thread(void *arg);
@@ -85,6 +91,7 @@ protected:
     void HandleTCPRequest(int clientSock, unsigned short port);
 
     int getLocalIPAddress(std::string &ip_addr, std::string iface);
+    bool tokenizeClientData(std::list<std::string> *tokens, std::string *data);
 
     std::string name;
     std::string ip;

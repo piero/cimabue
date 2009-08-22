@@ -80,7 +80,7 @@ int Message::Recv(int skt)
         recv_bytes++;
     }
 
-    messageLog.print(LOG_DEBUG, "[ ] Received %d bytes\n%s\n\n", recv_bytes, recv_buf);
+    messageLog.print(LOG_PARANOID, "[ ] Received %d bytes\n%s\n\n", recv_bytes, recv_buf);
 
     recv_buf[recv_bytes - 1] = '\0';	// Remove termination char
     received = string(recv_buf);
@@ -347,6 +347,9 @@ message_t Message::encodeType(std::string s)
     if (s == "MSG_ADD_CLIENT")
         return MSG_ADD_CLIENT;
 
+    else if (s == "MSG_UPDATE_CLIENTS")
+    	return MSG_UPDATE_CLIENTS;
+
     else if (s == "MSG_REM_CLIENT")
         return MSG_REM_CLIENT;
 
@@ -375,6 +378,10 @@ string Message::decodeType(message_t t)
     case MSG_ADD_CLIENT:
         ret = "MSG_ADD_CLIENT";
         break;
+
+    case MSG_UPDATE_CLIENTS:
+    	ret ="MSG_UPDATE_CLIENTS";
+    	break;
 
     case MSG_REM_CLIENT:
         ret = "MSG_REM_CLIENT";

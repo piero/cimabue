@@ -47,6 +47,10 @@ private:
     unsigned int server_port;
 
     StateManager *manager;
+
+    // Association: Client Nickname --> Client Name
+    // This is the list of connected Clients (a part from us)
+    std::map<std::string, std::string> clientNickToNameMap;
 };
 
 

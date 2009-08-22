@@ -114,7 +114,7 @@ void* Node::do_listen_thread(void *arg)
             for (port = 0; port < MAX_PORTS; ++port)
                 if (FD_ISSET(me->sktList[port], &sockSet))
                 {
-                    me->log.print(LOG_INFO, "[ ] Request on port %d\n",
+                    me->log.print(LOG_PARANOID, "[ ] Request on port %d\n",
                                   me->portList[port]);
                     me->HandleTCPRequest(me->AcceptTCPConnection(me->sktList[port]),
                                          me->portList[port]);
@@ -133,7 +133,7 @@ void* Node::do_listen_thread(void *arg)
     }
 
     me->listen_thread_is_running = false;
-    me->log.print(LOG_DEBUG, "[x] Listen thread\n");
+    me->log.print(LOG_PARANOID, "[x] Listen thread\n");
     pthread_exit(0);
 }
 
@@ -165,7 +165,7 @@ void* Node::do_process_thread(void *arg)
     }
 
     me->process_thread_is_running = false;
-    me->log.print(LOG_DEBUG, "[x] Process thread\n");
+    me->log.print(LOG_PARANOID, "[x] Process thread\n");
     pthread_exit(0);
 }
 
@@ -283,25 +283,52 @@ unsigned short Node::getDownPort()
     return portList[DOWN_PORT];
 }
 
+string Node::parseNickname(string nodeData)
+{
+    string nickname = "";
+
+    list<string> tokens;
+
+    if (tokenizeClientData(&tokens, &nodeData))
+    {
+        nickname = tokens.front();
+    }
+
+    return nickname;
+}
+
+bool Node::parseNicknameAndIP(string *nickname, string *ip)
+{
+    bool retval = false;
+
+    list<string> tokens;
+
+    if (tokenizeClientData(&tokens, nickname))
+    {
+        *nickname = tokens.front();
+        tokens.pop_front();
+
+        *ip = tokens.front();
+
+        retval = true;
+    }
+
+    return retval;
+}
+
 bool Node::parseAddress(string *nodeAddress, unsigned int *nodePort)
 {
     bool retval = false;
 
     list<string> tokens;
-    string::size_type lastPos = nodeAddress->find_first_not_of(":", 0);
-    string::size_type pos = nodeAddress->find_first_of(":", 0);
 
-    while (string::npos != pos || string::npos != lastPos)
+    if (tokenizeClientData(&tokens, nodeAddress))
     {
-        tokens.push_back(nodeAddress->substr(lastPos, pos - lastPos));
-        lastPos = nodeAddress->find_first_not_of(":", pos);
-        pos = nodeAddress->find_first_of(":", lastPos);
-    }
+        tokens.pop_front();	// Discard nickname
 
-    if (tokens.size() == 2)
-    {
         *nodeAddress = tokens.front();
         tokens.pop_front();
+
         *nodePort = atoi(tokens.front().c_str());
 
         retval = true;
@@ -310,27 +337,20 @@ bool Node::parseAddress(string *nodeAddress, unsigned int *nodePort)
     return retval;
 }
 
-bool Node::parseNameAndAddress(string *nodeNickname, string *nodeAddress, unsigned int *nodePort)
+bool Node::parseNicknameAndAddress(string *nodeNickname, string *nodeAddress, unsigned int *nodePort)
 {
     bool retval = false;
 
     list<string> tokens;
-    string::size_type lastPos = nodeAddress->find_first_not_of(":", 0);
-    string::size_type pos = nodeAddress->find_first_of(":", 0);
 
-    while (string::npos != pos || string::npos != lastPos)
-    {
-        tokens.push_back(nodeAddress->substr(lastPos, pos - lastPos));
-        lastPos = nodeAddress->find_first_not_of(":", pos);
-        pos = nodeAddress->find_first_of(":", lastPos);
-    }
-
-    if (tokens.size() == 3)
+    if (tokenizeClientData(&tokens, nodeAddress))
     {
         *nodeNickname = tokens.front();
         tokens.pop_front();
+
         *nodeAddress = tokens.front();
         tokens.pop_front();
+
         *nodePort = atoi(tokens.front().c_str());
 
         retval = true;
@@ -339,6 +359,23 @@ bool Node::parseNameAndAddress(string *nodeNickname, string *nodeAddress, unsign
     return retval;
 }
 
+bool Node::tokenizeClientData(list<string> *tokens, string *data)
+{
+    string::size_type lastPos = data->find_first_not_of(":", 0);
+    string::size_type pos = data->find_first_of(":", 0);
+
+    while (string::npos != pos || string::npos != lastPos)
+    {
+        tokens->push_back(data->substr(lastPos, pos - lastPos));
+        lastPos = data->find_first_not_of(":", pos);
+        pos = data->find_first_of(":", lastPos);
+    }
+
+    if (tokens->size() > 0)
+        return true;
+    else
+        return false;
+}
 
 int Node::getLocalIPAddress(string &ip_addr, string iface)
 {

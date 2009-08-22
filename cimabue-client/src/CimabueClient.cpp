@@ -13,7 +13,7 @@ using namespace std;
 CimabueClient::CimabueClient(StateManager *caller) :
         Node(caller->getClientPort() + 1, caller->getClientPort())
 {
-	manager = caller;
+    manager = caller;
 
     connectedToServer = false;
     server_ip = manager->getServerIP();
@@ -72,8 +72,8 @@ void CimabueClient::connectToServer(string serverIP)
     log.print(LOG_INFO, "[ ] Connected to Server: %s\n", server.c_str());
 
     // Notify views
-       EventConnected event_connected(serverIP, server_port);
-       manager->updateViews(event_connected);
+    EventConnected event_connected(serverIP, server_port);
+    manager->updateViews(event_connected);
 }
 
 void CimabueClient::setProxyIP(string ip)
@@ -148,7 +148,7 @@ int CimabueClient::processDownMessage(Message *msg, int skt)
 
             extractNicknameAndData(msg->getData(), sender_nick, msg_content);
 
-            log.print(LOG_WARNING, "[*] Received message from %s:\n%s\n",
+            log.print(LOG_PARANOID, "[*] Received message from %s:\n%s\n",
                       sender_nick.c_str(), msg_content.c_str());
 
             Message ack;
@@ -161,8 +161,31 @@ int CimabueClient::processDownMessage(Message *msg, int skt)
         }
         break;
 
+    case MSG_UPDATE_CLIENTS:
+        {
+            log.print(LOG_PARANOID, "[ ] Received MSG_UPDATE_CLIENTS message\n");
+
+            // Update Client list
+            string nickname = msg->getData();
+            string ip;
+
+            if (parseNicknameAndIP(&nickname, &ip))
+            {
+                clientNickToNameMap.insert(pair<string, string>
+                                           (nickname, ip));
+
+                log.print(LOG_DEBUG, "[ ] Added (%s, %s) to client list\n",
+                          nickname.c_str(), ip.c_str());
+            }
+
+            Message ack;
+            ack.Reply(skt);
+            log.print(LOG_DEBUG, "[ ] Replied to MSG_UPDATE_CLIENTS request\n");
+        }
+        break;
+
     default:
-        log.print(LOG_INFO, "[#] Unknown message type (down)\n");
+        log.print(LOG_ERROR, "[#] Unknown message type (down)\n");
         break;
     }
 

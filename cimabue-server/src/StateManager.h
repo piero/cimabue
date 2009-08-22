@@ -9,7 +9,7 @@
 #define STATEMANAGER_H_
 
 #include "server_states/StateInit.h"
-#include "nodes/CimabueServer.h"
+#include "CimabueServer.h"
 #include <list>
 
 class Observer;
