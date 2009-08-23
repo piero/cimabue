@@ -26,7 +26,6 @@ private:
     // Execute requests
     Message* executeSendMessage(Message *msg);
     Message* executeAddClient(Message *msg);
-    Message* executeRemClient(Message *msg);
 
     void updateClientList(Message *msg);
 

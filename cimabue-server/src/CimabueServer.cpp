@@ -70,7 +70,12 @@ void* CimabueServer::do_pingClient(void *myself)
                          me->name, MSG_VOID,
                          MSG_VOID);
 
-            Message *pong = ping.Send(client_iter->second, NODE_PORT_CLIENT_UP);
+            // Get Client IP and port
+            string dest_ip = client_iter->second;
+            unsigned int dest_port;
+            me->parseAddress(&dest_ip, &dest_port);
+
+            Message *pong = ping.Send(dest_ip, dest_port);
 
             if (!pong->isErrorMessage())
             {
@@ -78,6 +83,10 @@ void* CimabueServer::do_pingClient(void *myself)
                 map<string, timestamp_t>::iterator ping_iter;
                 pthread_mutex_lock(&me->clientPingList_mutex);
                 ping_iter = me->clientPingList.find(client_iter->first);
+
+                if (ping_iter == me->clientPingList.end())
+                    me->log.print(LOG_ERROR, "[!] Client not found in ping list!\n");
+
                 ping_iter->second = me->getTimestamp();
 
                 me->log.print(LOG_DEBUG, "[ ] Updated timestamp: %s - %ld\n",
@@ -105,13 +114,11 @@ void* CimabueServer::do_pingClient(void *myself)
 
             if (delta > 5 * 1E9)
             {
-                me->log.print(LOG_INFO, "[@] Proxy %s timed-out (%lld)\n",
+                me->log.print(LOG_INFO, "[@] Client %s timed-out (%lld)\n",
                               ping_iter->first.c_str(), delta);
 
-                // Remove proxy from proxyList and proxyPingList
-                pthread_mutex_unlock(&me->clientPingList_mutex);
+                // Remove Client from related lists
                 me->removeClient(ping_iter->first);
-                pthread_mutex_lock(&me->clientPingList_mutex);
             }
         }
         pthread_mutex_unlock(&me->clientPingList_mutex);
@@ -168,10 +175,6 @@ int CimabueServer::processDownMessage(Message *msg, int skt)
         {
         case MSG_SEND_MESSAGE:
             answer = executeSendMessage(msg);
-            break;
-
-        case MSG_REM_CLIENT:
-            answer = executeRemClient(msg);
             break;
 
         default:
@@ -251,15 +254,20 @@ Message* CimabueServer::executeAddClient(Message *msg)
 
     pthread_mutex_unlock(&clientNameList_mutex);
 
+    // Add client to ping list
+    pthread_mutex_lock(&clientPingList_mutex);
+    clientPingList.insert(pair<string, timestamp_t>
+                          (msg->getClientSource(), getTimestamp()));
+    pthread_mutex_unlock(&clientPingList_mutex);
+
     // Add client nickname
     pthread_mutex_lock(&clientNicknameList_mutex);
 
     string nickname = parseNickname(msg->getData());
     clientNicknameToName.insert(pair<string, string>
-                                (nickname, msg->getClientSource()));
+                                (msg->getClientSource(), nickname));
 
     pthread_mutex_unlock(&clientNicknameList_mutex);
-
 
     // Reply to Client
     return new Message(MSG_ADD_CLIENT,
@@ -313,9 +321,9 @@ void CimabueServer::updateClientList(Message *msg)
                 log.print(LOG_DEBUG, "[NEW] Updating %s: \"%s\"...\n",
                           iter->first.c_str(), iter->second.c_str());
 
-                string entry = iter->first;
+                string entry = iter->second;
                 entry += ":";
-                entry += iter->second;
+                entry += iter->first;
 
                 Message update_msg(MSG_UPDATE_CLIENTS,
                                    MSG_VOID, msg->getClientSource(),
@@ -329,28 +337,9 @@ void CimabueServer::updateClientList(Message *msg)
                     update_msg.Send(update_ip, update_port);
             }
         }
-
-
     }
 
     pthread_mutex_unlock(&clientNameList_mutex);
-}
-
-Message* CimabueServer::executeRemClient(Message *msg)
-{
-    // Remove client from list
-    pthread_mutex_lock(&clientNameList_mutex);
-    clientNameToIPMap.erase(msg->getData());
-    pthread_mutex_unlock(&clientNameList_mutex);
-
-    pthread_mutex_lock(&clientNicknameList_mutex);
-    // TODO: Remove client from nickname list
-    pthread_mutex_unlock(&clientNicknameList_mutex);
-
-    return new Message(MSG_REM_CLIENT,
-                       MSG_VOID, msg->getClientSource(),
-                       name, MSG_VOID,
-                       msg->getData());
 }
 
 string CimabueServer::getServerAddress(string serverName)
@@ -379,6 +368,10 @@ void CimabueServer::removeClient(string clientName)
     pthread_mutex_lock(&clientPingList_mutex);
     clientPingList.erase(clientName);
     pthread_mutex_unlock(&clientPingList_mutex);
+
+    pthread_mutex_lock(&clientNicknameList_mutex);
+    clientNicknameToName.erase(clientName);
+    pthread_mutex_unlock(&clientNicknameList_mutex);
 }
 
 bool CimabueServer::haveClient(string clientName)
