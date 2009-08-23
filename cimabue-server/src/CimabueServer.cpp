@@ -63,7 +63,7 @@ void* CimabueServer::do_pingClient(void *myself)
 
         for (client_iter = me->clientNameToIPMap.begin(); client_iter != me->clientNameToIPMap.end(); client_iter++)
         {
-            me->log.print(LOG_DEBUG, "[ ] Pinging %s...\n", client_iter->first.c_str());
+            me->log.print(LOG_PARANOID, "[ ] Pinging %s...\n", client_iter->first.c_str());
 
             Message ping(MSG_PING_CLIENT,
                          MSG_VOID, client_iter->first,
@@ -89,7 +89,7 @@ void* CimabueServer::do_pingClient(void *myself)
 
                 ping_iter->second = me->getTimestamp();
 
-                me->log.print(LOG_DEBUG, "[ ] Updated timestamp: %s - %ld\n",
+                me->log.print(LOG_PARANOID, "[ ] Updated timestamp: %s - %ld\n",
                               ping_iter->first.c_str(), ping_iter->second);
                 pthread_mutex_unlock(&me->clientPingList_mutex);
             }
@@ -288,15 +288,15 @@ void CimabueServer::updateClientList(Message *msg)
             clientListIter != clientNameToIPMap.end();
             clientListIter++)
     {
+    	log.print(LOG_DEBUG, "Updating %s list...\n", clientListIter->first.c_str());
+
         if (clientListIter->first != msg->getClientSource())
         {
             // Send clientNickname:clientName
-            string entry = parseNickname(msg->getData());
+            string entry = "1:";
+            entry += parseNickname(msg->getData());
             entry += ":";
             entry += msg->getClientSource();
-
-            log.print(LOG_DEBUG, "[OLD] Updating %s: \"%s\"...\n",
-                      clientListIter->first.c_str(), entry.c_str());
 
             Message update_msg(MSG_UPDATE_CLIENTS,
                                MSG_VOID, clientListIter->first,
@@ -311,7 +311,10 @@ void CimabueServer::updateClientList(Message *msg)
         }
         else
         {
-            log.print(LOG_DEBUG, "--> Updating new client...\n");
+            char num_clients[16];
+            memset(num_clients, 0, 16);
+            sprintf(num_clients, "%d", (int)clientNicknameToName.size());
+            string entry = num_clients;
 
             // Send many messages! --> TODO: Find a better way
             map<string, string>::iterator iter;
@@ -320,24 +323,22 @@ void CimabueServer::updateClientList(Message *msg)
                     iter != clientNicknameToName.end();
                     iter++)
             {
-                log.print(LOG_DEBUG, "[NEW] Updating %s: \"%s\"...\n",
-                          iter->first.c_str(), iter->second.c_str());
-
-                string entry = iter->second;
+                entry += ":";
+                entry += iter->second;
                 entry += ":";
                 entry += iter->first;
-
-                Message update_msg(MSG_UPDATE_CLIENTS,
-                                   MSG_VOID, msg->getClientSource(),
-                                   name, MSG_VOID,
-                                   entry);
-
-                string update_ip = clientListIter->second;
-                unsigned int update_port;
-
-                if (parseAddress(&update_ip, &update_port))
-                    update_msg.Send(update_ip, update_port);
             }
+
+            Message update_msg(MSG_UPDATE_CLIENTS,
+                               MSG_VOID, msg->getClientSource(),
+                               name, MSG_VOID,
+                               entry);
+
+            string update_ip = clientListIter->second;
+            unsigned int update_port;
+
+            if (parseAddress(&update_ip, &update_port))
+                update_msg.Send(update_ip, update_port);
         }
     }
 

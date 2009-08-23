@@ -148,7 +148,7 @@ int CimabueClient::processDownMessage(Message *msg, int skt)
             // Send ping reply
             Message pong;
             pong.Reply(skt);
-            log.print(LOG_DEBUG, "[ ] Replied to PING request\n");
+            log.print(LOG_PARANOID, "[ ] Replied to PING request\n");
         }
         break;
 
@@ -176,20 +176,27 @@ int CimabueClient::processDownMessage(Message *msg, int skt)
         {
             log.print(LOG_PARANOID, "[ ] Received MSG_UPDATE_CLIENTS message\n");
 
-            // Update Client list
-            string nickname = msg->getData();
-            string node_name;
+            // Retrieve the number of Clients
+            size_t first_separator = msg->getData().find(":");
+            string client_number_s = msg->getData().substr(0, first_separator);
+            unsigned int client_number = atoi(client_number_s.c_str());
 
-            if (parseNicknameAndName(&nickname, &node_name))
+            log.print(LOG_DEBUG, "Adding %d client/s...\n", client_number);
+
+            // Strip # information from data
+            string data = msg->getData().substr(first_separator + 1);
+
+            for (unsigned int i = 0; i < client_number; ++i)
             {
-                clientNickToNameMap.insert(pair<string, string>
-                                           (nickname, node_name));
+                pair<string, string> new_client = extractNewClient(data);
+
+                clientNickToNameMap.insert(pair<string, string>(new_client.first, new_client.second));
 
                 log.print(LOG_DEBUG, "[ ] Added (%s, %s) to client list\n",
-                          nickname.c_str(), node_name.c_str());
+                          new_client.first.c_str(), new_client.second.c_str());
 
                 // Notify views
-                EventUpdateAdd event(nickname);
+                EventUpdateAdd event(new_client.first);
                 manager->updateViews(event);
             }
 
@@ -278,4 +285,27 @@ void CimabueClient::extractNicknameAndData(string s, string &nick, string &data)
     nick = tokens.front();
     tokens.pop_front();
     data = tokens.front();
+}
+
+pair<string, string> CimabueClient::extractNewClient(std::string &data)
+{
+    string nick, name;
+    size_t first_separator = data.find(":");
+
+    nick = data.substr(0, first_separator);
+
+    size_t second_separator = data.find(":", first_separator + 1);
+    if (second_separator != string::npos)
+    {
+        name = data.substr(first_separator + 1, second_separator - first_separator - 1);
+        data = data.substr(second_separator + 1);
+    }
+    else
+    {
+        // Last entry
+        name = data.substr(first_separator + 1);
+        data = MSG_VOID;
+    }
+
+    return pair<string, string>(nick, name);
 }

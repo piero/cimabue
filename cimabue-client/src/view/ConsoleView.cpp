@@ -53,7 +53,7 @@ void ConsoleView::update(Event *event)
         break;
 
     case EVT_UPDATE_CLIENT_LIST:
-        printf("[V] A new client joined\n\t%s\n",
+        printf("[V] A new client has joined\n\t%s\n",
                ((EventMessage*)event)->getNickname());
 
         clients.push_back(((EventMessage*)event)->getNickname());

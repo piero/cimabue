@@ -120,7 +120,7 @@ int Message::Reply(int skt)
 
 Message* Message::Send(std::string ip, unsigned int port)
 {
-    messageLog.print(LOG_DEBUG, "Message::Send(%s, %d)\n", ip.c_str(), port);
+    messageLog.print(LOG_PARANOID, "[ ] Sending message to %s:%d\n", ip.c_str(), port);
 
     int skt = socket(PF_INET, SOCK_STREAM, 0);
 

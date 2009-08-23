@@ -37,6 +37,8 @@ private:
 
     void extractNicknameAndData(std::string s, std::string &nick, std::string &data);
 
+    std::pair<std::string, std::string> extractNewClient(std::string &data);
+
     void connectToServer(std::string proxyIP);
 
     bool connectedToServer;
