@@ -90,6 +90,17 @@ int CimabueClient::sendMessage(string dest, string content)
 {
     int ret = RET_ERROR;
 
+    map<string, string>::iterator iter;
+
+    iter = clientNickToNameMap.find(dest);
+    if (iter == clientNickToNameMap.end())
+    {
+        log.print(LOG_ERROR, "[!] Couldn't find \"%s\" in client list\n", dest.c_str());
+        return ret;
+    }
+
+    dest = iter->second;
+
     string data_to_send = nickname;
     data_to_send += DATA_SEPARATOR;
     data_to_send += content;
@@ -103,7 +114,7 @@ int CimabueClient::sendMessage(string dest, string content)
 
     if (reply->isErrorMessage())
     {
-        log.print(LOG_ERROR, "[!] Error connecting to Proxy: %s",
+        log.print(LOG_ERROR, "[!] Error connecting to Server: %s",
                   ((ErrorMessage*) ret)->getErrorMessage().c_str());
     }
     else
