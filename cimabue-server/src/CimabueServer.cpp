@@ -118,7 +118,9 @@ void* CimabueServer::do_pingClient(void *myself)
                               ping_iter->first.c_str(), delta);
 
                 // Remove Client from related lists
+                pthread_mutex_unlock(&me->clientPingList_mutex);
                 me->removeClient(ping_iter->first);
+                pthread_mutex_lock(&me->clientPingList_mutex);
             }
         }
         pthread_mutex_unlock(&me->clientPingList_mutex);

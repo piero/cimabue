@@ -89,8 +89,7 @@ int Message::Recv(int skt)
     deserialize(received);
 
     messageLog.print(LOG_PARANOID, "--- RECEIVED MESSAGE ---\n");
-    if (messageLog.getLogLevel() == LOG_PARANOID)
-        dump();
+    dump();
     messageLog.print(LOG_PARANOID, "------------------------\n");
 
     return RET_SUCCESS;
@@ -112,8 +111,7 @@ int Message::Reply(int skt)
     }
 
     messageLog.print(LOG_PARANOID, "-------- SENT REPLY MESSAGE --------\n");
-    if (messageLog.getLogLevel() == LOG_PARANOID)
-        dump();
+    dump();
     messageLog.print(LOG_PARANOID, "------------------------------------\n");
 
     return RET_SUCCESS;
@@ -122,7 +120,7 @@ int Message::Reply(int skt)
 
 Message* Message::Send(std::string ip, unsigned int port)
 {
-	messageLog.print(LOG_DEBUG, "Message::Send(%s, %d)\n", ip.c_str(), port);
+    messageLog.print(LOG_DEBUG, "Message::Send(%s, %d)\n", ip.c_str(), port);
 
     int skt = socket(PF_INET, SOCK_STREAM, 0);
 
@@ -179,8 +177,7 @@ Message* Message::Send(std::string ip, unsigned int port)
     }
 
     messageLog.print(LOG_PARANOID, "--- SENT MESSAGE (%s:%d) ---\n", ip.c_str(), port);
-    if (messageLog.getLogLevel() == LOG_PARANOID)
-        dump();
+    dump();
     messageLog.print(LOG_PARANOID, "---------------------------- %d bytes\n", sent_bytes);
 
 
@@ -348,7 +345,7 @@ message_t Message::encodeType(std::string s)
         return MSG_ADD_CLIENT;
 
     else if (s == "MSG_UPDATE_CLIENTS")
-    	return MSG_UPDATE_CLIENTS;
+        return MSG_UPDATE_CLIENTS;
 
     else if (s == "MSG_REM_CLIENT")
         return MSG_REM_CLIENT;
@@ -380,8 +377,8 @@ string Message::decodeType(message_t t)
         break;
 
     case MSG_UPDATE_CLIENTS:
-    	ret ="MSG_UPDATE_CLIENTS";
-    	break;
+        ret = "MSG_UPDATE_CLIENTS";
+        break;
 
     case MSG_REM_CLIENT:
         ret = "MSG_REM_CLIENT";
@@ -432,13 +429,13 @@ string Message::decodePriority(message_priority_t p)
 
 void Message::dump()
 {
-    messageLog.print(LOG_DEBUG, "Type:\t%s\n", decodeType(type).c_str());
-    messageLog.print(LOG_DEBUG, "clientSrc:\t%s\n", clientSrc.c_str());
-    messageLog.print(LOG_DEBUG, "clientDest:\t%s\n", clientDest.c_str());
-    messageLog.print(LOG_DEBUG, "serverSrc:\t%s\n", serverSrc.c_str());
-    messageLog.print(LOG_DEBUG, "serverDest:\t%s\n", serverDest.c_str());
-    messageLog.print(LOG_DEBUG, "Data:\t%s\n", data.c_str());
-    messageLog.print(LOG_DEBUG, "Prio:\t%d\n", priority);
+    messageLog.print(LOG_PARANOID, "Type:\t%s\n", decodeType(type).c_str());
+    messageLog.print(LOG_PARANOID, "clientSrc:\t%s\n", clientSrc.c_str());
+    messageLog.print(LOG_PARANOID, "clientDest:\t%s\n", clientDest.c_str());
+    messageLog.print(LOG_PARANOID, "serverSrc:\t%s\n", serverSrc.c_str());
+    messageLog.print(LOG_PARANOID, "serverDest:\t%s\n", serverDest.c_str());
+    messageLog.print(LOG_PARANOID, "Data:\t%s\n", data.c_str());
+    messageLog.print(LOG_PARANOID, "Prio:\t%d\n", priority);
 }
 
 
