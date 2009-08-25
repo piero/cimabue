@@ -14,6 +14,7 @@ CimabueServer::CimabueServer(unsigned short port, bool enablePing) :
 {
 	pingClient_is_running = false;
 	ping_enabled = enablePing;
+	role = SERVER_ROLE_IDLE;
 
 	log.print(LOG_DEBUG, "CimabueServer()\n");
 
@@ -413,4 +414,9 @@ bool CimabueServer::haveClient(string clientName)
 string CimabueServer::getClientAddress(string clientName)
 {
 	return clientNameToIPMap.find(clientName)->second;
+}
+
+server_role_t CimabueServer::getRole()
+{
+	return role;
 }

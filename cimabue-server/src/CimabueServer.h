@@ -10,6 +10,14 @@
 
 #include <nodes/Node.h>
 
+typedef enum
+{
+	SERVER_ROLE_MASTER,
+	SERVER_ROLE_BACKUP,
+	SERVER_ROLE_IDLE
+} server_role_t;
+
+
 class CimabueServer : public Node
 {
 public:
@@ -17,6 +25,8 @@ public:
     virtual ~CimabueServer();
 
     unsigned int getServerPort();
+
+    server_role_t getRole();
 
 private:
     static void* do_listen(void *myself);
@@ -69,6 +79,8 @@ private:
     // Association clientName --> last_ping_timestamp
     std::map<std::string, timestamp_t> clientPingList;
     pthread_mutex_t clientPingList_mutex;
+
+    server_role_t role;
 };
 
 
