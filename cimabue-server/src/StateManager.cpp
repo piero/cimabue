@@ -42,6 +42,13 @@ void StateManager::handleInput()
     current_state->handleInput();
 }
 
+void StateManager::init()
+{
+    log.print(LOG_PARANOID, "[ ] StateManager::init()\n");
+
+    setState(new StateInit(this));
+}
+
 void StateManager::startServer()
 {
     log.print(LOG_DEBUG, "[ ] Creating Cimabue Server...\n");
@@ -52,11 +59,4 @@ void StateManager::startServer()
         log.print(LOG_DEBUG, "[ ] Created Cimabue Server (%d)\n", server_port);
     else
         log.print(LOG_ERROR, "[!] Error creating Cimabue Server (%d)\n", server_port);
-}
-
-void StateManager::init()
-{
-    log.print(LOG_DEBUG, "[ ] StateManager::init()\n");
-
-    setState(new StateInit(this));
 }
