@@ -20,7 +20,8 @@ typedef enum
     EVT_CONNECTING,
     EVT_CONNECTED,
     EVT_NEW_MESSAGE,
-    EVT_UPDATE_CLIENT_LIST,
+    EVT_UPDATE_CLIENT_LIST_ADD,
+    EVT_UPDATE_CLIENT_LIST_REM,
     EVT_UPDATE_SERVER
 } event_type_t;
 
@@ -105,6 +106,14 @@ class EventUpdateAdd : public Event
 {
 public:
 	EventUpdateAdd(std::string nickname);
+
+	char* getNickname();
+};
+
+class EventUpdateRem : public Event
+{
+public:
+	EventUpdateRem(std::string nickname);
 
 	char* getNickname();
 };

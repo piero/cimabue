@@ -93,7 +93,7 @@ unsigned EventConnected::getTargetPort()
 
 
 EventUpdateAdd::EventUpdateAdd(string nickname)
-        : Event(EVT_UPDATE_CLIENT_LIST)
+        : Event(EVT_UPDATE_CLIENT_LIST_ADD)
 {
     log.print(LOG_PARANOID, "[+] New EventUpdateAdd: 0x%x\n", this);
 
@@ -102,6 +102,21 @@ EventUpdateAdd::EventUpdateAdd(string nickname)
 }
 
 char* EventUpdateAdd::getNickname()
+{
+    return event.data.msg.nickname;
+}
+
+
+EventUpdateRem::EventUpdateRem(string nickname)
+        : Event(EVT_UPDATE_CLIENT_LIST_REM)
+{
+    log.print(LOG_PARANOID, "[+] New EventUpdateRem: 0x%x\n", this);
+
+    memset(event.data.msg.nickname, 0, 128);
+    strncpy(event.data.msg.nickname, nickname.c_str(), nickname.length());
+}
+
+char* EventUpdateRem::getNickname()
 {
     return event.data.msg.nickname;
 }

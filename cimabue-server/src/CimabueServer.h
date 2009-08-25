@@ -27,7 +27,8 @@ private:
     Message* executeSendMessage(Message *msg);
     Message* executeAddClient(Message *msg);
 
-    void updateClientList(Message *msg);
+    void updateClientListAdd(Message *msg);
+    void updateClientListRem(std::string node_name);
 
     // Ping connected proxies
     pthread_t pingClient_tid;
