@@ -139,7 +139,6 @@ void* ConsoleView::do_console_thread(void *arg)
 		cout << ">>> Message?" << endl;
 		cin >> message;
 
-		// TODO: Send message
 		me->model->getConnector()->sendMessage(destination, message);
 	}
 

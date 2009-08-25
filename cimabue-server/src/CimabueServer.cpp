@@ -317,7 +317,6 @@ void CimabueServer::updateClientListAdd(Message *msg)
 			sprintf(num_clients, "%d", (int) clientNicknameToName.size());
 			string entry = num_clients;
 
-			// Send many messages! --> TODO: Find a better way
 			map<string, string>::iterator iter;
 
 			for (iter = clientNicknameToName.begin(); iter
