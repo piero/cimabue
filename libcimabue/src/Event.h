@@ -22,13 +22,30 @@ public:
     virtual ~Event()
     {}
 
-    std::string getEventType()
+    // Accessors
+    std::string getType()
     {
         return eventType;
     }
 
+    void setType(std::string type)
+    {
+    	eventType = type;
+    }
+
+    std::string getData()
+    {
+    	return eventData;
+    }
+
+    void setData(std::string data)
+    {
+    	eventData = data;
+    }
+
 protected:
     std::string eventType;
+    std::string eventData;
 };
 
 
