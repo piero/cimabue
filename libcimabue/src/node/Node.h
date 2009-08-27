@@ -10,8 +10,8 @@
 
 #include <stdlib.h>
 #include <map>
-#include "Event.h"
-#include "message/MessageQueue.h"
+#include "../Event.h"
+#include "../message/MessageQueue.h"
 
 #if !defined(__APPLE__)
 #	include <net/if.h>
@@ -28,9 +28,9 @@
 #include <time.h>
 #endif
 
-#include "base/base_include.h"
-#include "message/Message.h"
-#include "message/ErrorMessage.h"
+#include "../base/base_include.h"
+#include "../message/Message.h"
+#include "../message/ErrorMessage.h"
 
 #if !defined(__APPLE__)
 typedef long timestamp_t;
