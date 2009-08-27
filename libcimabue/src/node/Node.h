@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <map>
 #include "../Event.h"
+#include "../Filter.h"
 #include "../message/MessageQueue.h"
 
 #if !defined(__APPLE__)
@@ -31,6 +32,7 @@
 #include "../base/base_include.h"
 #include "../message/Message.h"
 #include "../message/ErrorMessage.h"
+#include "Subscriber.h"
 
 #if !defined(__APPLE__)
 typedef long timestamp_t;
@@ -49,11 +51,36 @@ typedef uint64_t timestamp_t;
 #define MAX_MSG_QUEUE	5
 
 
+// Stores information about a single subscription
+class Subscription
+{
+public:
+    Subscription(std::string event_type, Filter *event_filter = NULL, Subscriber *event_subscriber = NULL);
+    virtual ~Subscription();
+
+    std::string getEventType();
+    Filter *getFilter();
+    Subscriber *getSubscriber();
+
+    bool operator==(Subscription *test);
+
+protected:
+    std::string eventType;
+    Filter *filter;
+    Subscriber *subscriber;
+};
+
+
 class Node
 {
 public:
     Node(unsigned short port, long select_timeout = 5);
     virtual ~Node();
+
+    /*
+    // Provides well-known access point to singleton Node
+    static Node* instance();
+    */
 
     // Accessors
     std::string getName();
@@ -62,7 +89,9 @@ public:
     void setTimeout(long timeout);
 
     // Event Notifier pattern functions
-    // TODO TODO TODO TODO TODO
+    void publish(Event *event);
+    void subscribe(std::string event_type, Filter *filter, Subscriber *subscriber);
+    void unsubscribe(std::string event_type, Filter *filter, Subscriber *subscriber);
 
     // TODO: Make it protected
     virtual int processMessage(Message *msg, int skt) = 0;
@@ -97,6 +126,11 @@ protected:
     int getLocalIPAddress(std::string &ip_addr, std::string iface);
     bool tokenizeClientData(std::list<std::string> *tokens, std::string *data);
 
+    /*
+    // Singleton pattern
+    static Node *singleton;
+    */
+
     std::string name;
     std::string ip;
 
@@ -106,6 +140,7 @@ protected:
 
     // Message queues
     MessageQueue messageQueue;
+    std::list<Subscription*> subscriptions;
 
     sem_t ipc_sem;
     pthread_t listen_thread;

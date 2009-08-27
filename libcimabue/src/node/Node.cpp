@@ -68,6 +68,77 @@ Node::~Node()
     sem_destroy(&ipc_sem);
 }
 
+void Node::publish(Event *event)
+{
+    list<Subscription*>::iterator sub;
+
+    for (sub = subscriptions.begin(); sub != subscriptions.end(); sub++)
+    {
+        if (((*sub)->getEventType() == event->getType()) &&
+                (((*sub)->getFilter() == NULL ) ||
+                 ((*sub)->getFilter()->apply(event))))
+        {
+            (*sub)->getSubscriber()->inform(event);
+        }
+    }
+
+    printf("Published event: %s\n", event->getType().c_str());
+}
+
+void Node::subscribe(string event_type, Filter *filter, Subscriber *subscriber)
+{
+    Subscription *subscription = new Subscription(event_type, filter, subscriber);
+
+    bool found = false;
+
+    list<Subscription *>::iterator sub;
+    for (sub = subscriptions.begin(); sub != subscriptions.end(); sub++)
+    {
+        if (*sub == subscription)
+        {
+            found = true;
+            break;
+        }
+    }
+
+    if (!found)
+    {
+        subscriptions.push_back(subscription);
+        printf("[+] Added \"%s\" subscription: %d\n",
+               subscription->getEventType().c_str(), (int)subscriptions.size());
+
+    }
+    else
+        delete subscription;
+
+}
+
+void Node::unsubscribe(string event_type, Filter *filter, Subscriber *subscriber)
+{
+    Subscription *subscription = new Subscription(event_type, filter, subscriber);
+
+    bool found = false;
+
+    list<Subscription *>::iterator sub;
+    for (sub = subscriptions.begin(); sub != subscriptions.end(); sub++)
+    {
+        if (*sub == subscription)
+        {
+            found = true;
+            break;
+        }
+    }
+
+    if (found)
+    {
+        printf("[-] Removing \"%s\" subscription: %d\n",
+               subscription->getEventType().c_str(), (int)subscriptions.size());
+        subscriptions.erase(sub);
+    }
+    delete subscription;
+
+}
+
 void* Node::do_listen_thread(void *arg)
 {
     Node *me = (Node *) arg;
@@ -409,4 +480,37 @@ int Node::getLocalIPAddress(string &ip_addr, string iface)
 
     close(sockfd);
     return 0;
+}
+
+
+Subscription::Subscription(string event_type, Filter *event_filter, Subscriber *event_subscriber)
+{
+    eventType = event_type;
+    filter = event_filter;
+    subscriber = event_subscriber;
+}
+
+Subscription::~Subscription()
+{}
+
+string Subscription::getEventType()
+{
+    return eventType;
+}
+
+Filter* Subscription::getFilter()
+{
+    return filter;
+}
+
+Subscriber* Subscription::getSubscriber()
+{
+    return subscriber;
+}
+
+bool Subscription::operator==(Subscription *test)
+{
+    return (eventType == test->getEventType() &&
+            filter == test->getFilter() &&
+            subscriber == test->getSubscriber());
 }
