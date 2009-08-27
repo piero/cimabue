@@ -10,7 +10,7 @@
 using namespace std;
 
 CimabueServer::CimabueServer(unsigned short port, bool enablePing) :
-		Node(port + 1, port)
+		Node(port)
 {
 	pingClient_is_running = false;
 	ping_enabled = enablePing;
