@@ -32,8 +32,7 @@ public:
 
 private:
     static void* do_listen(void *myself);
-    int processUpMessage(Message *msg, int skt);
-    int processDownMessage(Message *msg, int skt);
+    int processMessage(Message *msg, int skt);
 
     void extractNicknameAndData(std::string s, std::string &nick, std::string &data);
 

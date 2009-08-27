@@ -11,7 +11,7 @@
 using namespace std;
 
 CimabueClient::CimabueClient(StateManager *caller) :
-		Node(caller->getClientPort() + 1, caller->getClientPort())
+		Node(caller->getClientPort())
 {
 	manager = caller;
 
@@ -40,7 +40,7 @@ void CimabueClient::connectToServer(string serverIP)
 	// Concatenate NICKNAME ## IP ## PORT
 	char nickname_ip_port[128];
 	memset(nickname_ip_port, 0, 128);
-	sprintf(nickname_ip_port, "%s:%s:%d", nickname.c_str(), ip.c_str(), portList[DOWN_PORT]);
+	sprintf(nickname_ip_port, "%s:%s:%d", nickname.c_str(), ip.c_str(), nodePort);
 
 	// Send message to Server
 	Message connectMe(MSG_ADD_CLIENT,
@@ -124,7 +124,7 @@ int CimabueClient::sendMessage(string dest, string content)
 	return ret;
 }
 
-int CimabueClient::processDownMessage(Message *msg, int skt)
+int CimabueClient::processMessage(Message *msg, int skt)
 {
 	// Check whether the message was addressed to us
 	if (msg->getClientDest() != name)
@@ -247,6 +247,7 @@ int CimabueClient::processDownMessage(Message *msg, int skt)
 	return RET_SUCCESS;
 }
 
+/*
 int CimabueClient::processUpMessage(Message *msg, int skt)
 {
 	// Check whether the message was addressed to us
@@ -289,6 +290,7 @@ int CimabueClient::processUpMessage(Message *msg, int skt)
 
 	return RET_SUCCESS;
 }
+*/
 
 string CimabueClient::getNickname()
 {
