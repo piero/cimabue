@@ -30,8 +30,7 @@ public:
 
 private:
     static void* do_listen(void *myself);
-    int processUpMessage(Message *msg, int skt);
-    int processDownMessage(Message *msg, int skt);
+    int processMessage(Message *msg, int skt);
 
     // Execute requests
     Message* executeSendMessage(Message *msg);

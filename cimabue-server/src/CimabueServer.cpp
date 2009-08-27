@@ -136,6 +136,7 @@ void* CimabueServer::do_pingClient(void *myself)
 	pthread_exit(0);
 }
 
+/*
 int CimabueServer::processUpMessage(Message *msg, int skt)
 {
 	log.print(LOG_INFO, "[ ] Processing message from another SERVER\n");
@@ -148,8 +149,9 @@ int CimabueServer::processUpMessage(Message *msg, int skt)
 
 	return RET_SUCCESS;
 }
+*/
 
-int CimabueServer::processDownMessage(Message *msg, int skt)
+int CimabueServer::processMessage(Message *msg, int skt)
 {
 	int ret = NODE_RET_ERROR;
 	Message *answer = NULL;
