@@ -10,14 +10,14 @@
 using namespace std;
 
 Node::Node(unsigned short port,
-           long timeout)
-        : listen_thread_is_running(false),
+           long select_timeout)
+        : nodePort(port),
+        listen_thread_is_running(false),
         process_thread_is_running(false),
         die(false),
-        selectTimeout(timeout)
+        selectTimeout(select_timeout)
 {
     getLocalIPAddress(ip, "eth0");
-    nodePort = port;
 
 #if defined(__APPLE__) && defined(__MACH__)
     // TODO: http://kevincathey.com/code/using-counting-semaphores-on-mac-os-x/
@@ -42,6 +42,7 @@ Node::Node(unsigned short port,
     name = string((const char*) temp_name);
     free(temp_name);
 
+    // The double-threaded structure gives us async requests
     pthread_create(&process_thread, NULL, do_process_thread, this);
     pthread_create(&listen_thread, NULL, do_listen_thread, this);
 

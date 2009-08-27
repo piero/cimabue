@@ -10,7 +10,8 @@
 
 #include <stdlib.h>
 #include <map>
-#include "../message/MessageQueue.h"
+#include "Event.h"
+#include "message/MessageQueue.h"
 
 #if !defined(__APPLE__)
 #	include <net/if.h>
@@ -27,9 +28,9 @@
 #include <time.h>
 #endif
 
-#include "../base/base_include.h"
-#include "../message/Message.h"
-#include "../message/ErrorMessage.h"
+#include "base/base_include.h"
+#include "message/Message.h"
+#include "message/ErrorMessage.h"
 
 #if !defined(__APPLE__)
 typedef long timestamp_t;
@@ -51,16 +52,23 @@ typedef uint64_t timestamp_t;
 class Node
 {
 public:
-    Node(unsigned short port, long timeout = 5);
+    Node(unsigned short port, long select_timeout = 5);
     virtual ~Node();
 
+    // Accessors
     std::string getName();
     std::string getIpAddress();
     unsigned short getPort();
+    void setTimeout(long timeout);
 
+    // Event Notifier pattern functions
+    // TODO TODO TODO TODO TODO
+
+    // TODO: Make it protected
     virtual int processMessage(Message *msg, int skt) = 0;
 
-    void setTimeout(long timeout);
+
+    // TODO: Make it protected
     timestamp_t getTimestamp();
 
 protected:
