@@ -27,7 +27,7 @@ int FileParser::manageFile()
 	int retval = 0;
 
 	// Open file
-	FILE *fs = fopen(file, "r");
+	FILE *fs = fopen(file.c_str(), "r");
 	if (fs == NULL)
 	{
 		log.print(LOG_ERROR, "[!] Error opening file %s: %s\n, file.c_str(), strerror(errno)");
@@ -38,9 +38,9 @@ int FileParser::manageFile()
 	log.print(LOG_DEBUG, "[ ] File %s: open\n", file.c_str());
 
 	// Get file size
-	fseek(file, 0, SEEK_END);
-	long file_size = ftell(file);
-	rewind(file);
+	fseek(fs, 0, SEEK_END);
+	long file_size = ftell(fs);
+	rewind(fs);
 
 	log.print(LOG_DEBUG, "[ ] File %s: size is %ld\n", file.c_str(), file_size);
 
@@ -56,8 +56,8 @@ int FileParser::manageFile()
 	log.print(LOG_DEBUG, "[ ] File %s: allocated memory\n", file.c_str());
 
 	// Copy the file into memory
-	size_t bytes = fread(buffer, 1, file_size, file);
-	if (bytes != file_size)
+	size_t bytes = fread(buffer, 1, file_size, fs);
+	if ((long)bytes != file_size)
 	{
 		log.print(LOG_ERROR, "[!] Error copying file into memory: %s\n, strerror(errno)");
 		free(buffer);
