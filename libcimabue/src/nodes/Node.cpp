@@ -9,8 +9,7 @@
 
 using namespace std;
 
-Node::Node(unsigned short upPort,
-           unsigned short DownPort,
+Node::Node(unsigned short port,
            long timeout)
         : listen_thread_is_running(false),
         process_thread_is_running(false),
@@ -18,8 +17,7 @@ Node::Node(unsigned short upPort,
         selectTimeout(timeout)
 {
     getLocalIPAddress(ip, "eth0");
-    portList[UP_PORT] = upPort;
-    portList[DOWN_PORT] = DownPort;
+    nodePort = port;
 
 #if defined(__APPLE__) && defined(__MACH__)
     // TODO: http://kevincathey.com/code/using-counting-semaphores-on-mac-os-x/
@@ -47,8 +45,8 @@ Node::Node(unsigned short upPort,
     pthread_create(&process_thread, NULL, do_process_thread, this);
     pthread_create(&listen_thread, NULL, do_listen_thread, this);
 
-    log.print(LOG_INFO, "[ ] Created node %s (%s:%d-%d)\n", name.c_str(),
-              ip.c_str(), portList[UP_PORT], portList[DOWN_PORT]);
+    log.print(LOG_INFO, "[ ] Created node %s (%s:%d)\n",
+              name.c_str(), ip.c_str(), port);
 }
 
 Node::~Node()
@@ -60,15 +58,9 @@ Node::~Node()
 
     message_entry_t current_msg;
 
-    while (upMessageQueue.size())
+    while (messageQueue.size())
     {
-        upMessageQueue.pop(&current_msg);
-        delete current_msg.msg;
-    }
-
-    while (downMessageQueue.size())
-    {
-        downMessageQueue.pop(&current_msg);
+        messageQueue.pop(&current_msg);
         delete current_msg.msg;
     }
 
@@ -78,19 +70,15 @@ Node::~Node()
 void* Node::do_listen_thread(void *arg)
 {
     Node *me = (Node *) arg;
-    int port;
     int maxDescriptor = -1;
 
     me->listen_thread_is_running = true;
 
     // Create listening sockets
-    for (port = 0; port < MAX_PORTS; ++port)
-    {
-        me->sktList[port] = me->CreateListeningSocket(me->portList[port]);
+    me->nodeSocket = me->CreateListeningSocket(me->nodePort);
 
-        if (me->sktList[port] > maxDescriptor)
-            maxDescriptor = me->sktList[port];
-    }
+    if (me->nodeSocket > maxDescriptor)
+        maxDescriptor = me->nodeSocket;
 
     // Init select() parameters
     fd_set sockSet;
@@ -100,9 +88,7 @@ void* Node::do_listen_thread(void *arg)
     while (!me->die)
     {
         FD_ZERO(&sockSet);
-
-        for (port = 0; port < MAX_PORTS; ++port)
-            FD_SET(me->sktList[port], &sockSet);
+        FD_SET(me->nodeSocket, &sockSet);
 
         selTimeout.tv_sec = me->selectTimeout;
         selTimeout.tv_usec = 0;
@@ -111,26 +97,20 @@ void* Node::do_listen_thread(void *arg)
             me->log.print(LOG_PARANOID, "Select timeout (%ld) - still alive\n", me->selectTimeout);
         else
         {
-            for (port = 0; port < MAX_PORTS; ++port)
-                if (FD_ISSET(me->sktList[port], &sockSet))
-                {
-                    me->log.print(LOG_PARANOID, "[ ] Request on port %d\n",
-                                  me->portList[port]);
-                    me->HandleTCPRequest(me->AcceptTCPConnection(me->sktList[port]),
-                                         me->portList[port]);
-                }
+            if (FD_ISSET(me->nodeSocket, &sockSet))
+            {
+                me->log.print(LOG_PARANOID, "[ ] Request on port %d\n", me->nodePort);
+                me->HandleTCPRequest(me->AcceptTCPConnection(me->nodeSocket), me->nodePort);
+            }
         }
     }
 
     // Close listening sockets
-    for (port = 0; port < MAX_PORTS; ++port)
-    {
-        if (close(me->sktList[port]) < 0)
-            me->log.print(LOG_ERROR, "[!] Error closing socket %d: %s\n",
-                          me->sktList[port], strerror(errno));
-        else
-            me->log.print(LOG_PARANOID, "[x] Socket %d\n", me->sktList[port]);
-    }
+    if (close(me->nodeSocket) < 0)
+        me->log.print(LOG_ERROR, "[!] Error closing socket %d: %s\n",
+                      me->nodeSocket, strerror(errno));
+    else
+        me->log.print(LOG_PARANOID, "[x] Socket %d\n", me->nodeSocket);
 
     me->listen_thread_is_running = false;
     me->log.print(LOG_PARANOID, "[x] Listen thread\n");
@@ -150,16 +130,10 @@ void* Node::do_process_thread(void *arg)
         // Process messages from upper nodes
         message_entry_t new_message;
 
-        if (me->downMessageQueue.pop(&new_message) == 0)
-        {
-            me->processDownMessage(new_message.msg, new_message.socket);
-            delete new_message.msg;
-        }
-
         // Process messages from lower nodes
-        if (me->upMessageQueue.pop(&new_message) == 0)
+        if (me->messageQueue.pop(&new_message) == 0)
         {
-            me->processUpMessage(new_message.msg, new_message.socket);
+            me->processMessage(new_message.msg, new_message.socket);
             delete new_message.msg;
         }
     }
@@ -237,13 +211,13 @@ void Node::HandleTCPRequest(int clientSock, unsigned short port)
     new_message.socket = clientSock;
     new_message.msg = msg;
 
-    if (port == portList[UP_PORT])
-        upMessageQueue.push(new_message);
-    else
-        downMessageQueue.push(new_message);
+    if (port == nodePort)
+    {
+        messageQueue.push(new_message);
 
-    // Notify the 'process_thread'
-    sem_post(&ipc_sem);
+        // Notify the 'process_thread'
+        sem_post(&ipc_sem);
+    }
 }
 
 void Node::setTimeout(long timeout)
@@ -273,14 +247,9 @@ string Node::getIpAddress()
     return ip;
 }
 
-unsigned short Node::getUpPort()
+unsigned short Node::getPort()
 {
-    return portList[UP_PORT];
-}
-
-unsigned short Node::getDownPort()
-{
-    return portList[DOWN_PORT];
+    return nodePort;
 }
 
 string Node::parseNickname(string nodeData)

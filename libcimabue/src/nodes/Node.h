@@ -42,27 +42,23 @@ typedef uint64_t timestamp_t;
 #define IFRSIZE   ((int)(size * sizeof (struct ifreq)))
 
 // Max number of listening ports
-#define MAX_PORTS	2
+#define MAX_PORTS	1
 
 // Max length of message queue (incoming messages are discarded after that)
 #define MAX_MSG_QUEUE	5
 
-#define UP_PORT		0
-#define DOWN_PORT	1
 
 class Node
 {
 public:
-    Node(unsigned short upPort, unsigned short downPort, long timeout = 5);
+    Node(unsigned short port, long timeout = 5);
     virtual ~Node();
 
     std::string getName();
     std::string getIpAddress();
-    unsigned short getUpPort();
-    unsigned short getDownPort();
+    unsigned short getPort();
 
-    virtual int processUpMessage(Message *msg, int skt) = 0;
-    virtual int processDownMessage(Message *msg, int skt) = 0;
+    virtual int processMessage(Message *msg, int skt) = 0;
 
     void setTimeout(long timeout);
     timestamp_t getTimestamp();
@@ -97,12 +93,11 @@ protected:
     std::string ip;
 
     // Arrays of listening ports and sockets, used by select()
-    unsigned short portList[MAX_PORTS];
-    int sktList[MAX_PORTS];
+    unsigned short nodePort;
+    int nodeSocket;
 
     // Message queues
-    MessageQueue upMessageQueue;
-    MessageQueue downMessageQueue;
+    MessageQueue messageQueue;
 
     sem_t ipc_sem;
     pthread_t listen_thread;
