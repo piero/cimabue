@@ -363,9 +363,6 @@ message_t Message::encodeType(std::string s)
 	else if (s == "MSG_REM_CLIENT")
 		return MSG_REM_CLIENT;
 
-	else if (s == "MSG_USER")
-		return MSG_USER;
-
 	else if (s == "MSG_SEND_MESSAGE")
 		return MSG_SEND_MESSAGE;
 
@@ -421,10 +418,6 @@ string Message::decodeType(message_t t)
 		ret = "MSG_PING_CLIENT";
 		break;
 
-	case MSG_USER:
-		ret = "MSG_USER";
-		break;
-
 	case MSG_ERROR:
 		ret = "MSG_ERROR";
 		break;
@@ -451,14 +444,49 @@ string Message::priorityToString()
 
 message_priority_t Message::encodePriority(std::string s)
 {
-	// TODO
-	return MSG_PRIORITY_NORMAL;
+	if (s == "MSG_PRIORITY_LOW")
+		return MSG_PRIORITY_LOW;
+
+	else if (s == "MSG_PRIORITY_NORMAL")
+		return MSG_PRIORITY_NORMAL;
+
+	else if (s == "MSG_PRIORITY_HIGH")
+		return MSG_PRIORITY_HIGH;
+
+	else if (s == "MSG_PRIORITY_CRITICAL")
+		return MSG_PRIORITY_CRITICAL;
+
+	else
+		return MSG_PRIORITY_NONE;
 }
 
 string Message::decodePriority(message_priority_t p)
 {
-	// TODO
-	return "MSG_PRIORITY_NORMAL";
+	string ret = "MSG_PRIORITY_NONE";
+
+	switch (p)
+	{
+	case MSG_PRIORITY_LOW:
+		ret = "MSG_PRIORITY_LOW";
+		break;
+
+	case MSG_PRIORITY_NORMAL:
+		ret = "MSG_PRIORITY_NORMAL";
+		break;
+
+	case MSG_PRIORITY_HIGH:
+		ret = "MSG_PRIORITY_HIGH";
+		break;
+
+	case MSG_PRIORITY_CRITICAL:
+		ret = "MSG_PRIORITY_CRITICAL";
+		break;
+
+	default:
+		break;
+	}
+
+	return ret;
 }
 
 void Message::dump()

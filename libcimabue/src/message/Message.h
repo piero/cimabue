@@ -24,12 +24,14 @@ typedef enum
 
     MSG_ADD_CLIENT,        		// add a client
     MSG_REM_CLIENT,        		// remove a client
+
     MSG_SEND_MESSAGE,       	// send a message
+
     MSG_UPDATE_ADD_CLIENTS,		// update client list (server -> clients)
     MSG_UPDATE_REM_CLIENTS,		// update client list (server -> clients)
     MSG_SET_CLIENT_LIST,    	// send client list (server)
+
     MSG_PING_CLIENT,			// Ping a client to verify its connection
-    MSG_USER,					// user-specific
 
     MSG_ERROR,
 
@@ -41,6 +43,7 @@ typedef enum
 
 typedef enum
 {
+	MSG_PRIORITY_NONE = 0,
     MSG_PRIORITY_LOW = 1,
     MSG_PRIORITY_NORMAL,
     MSG_PRIORITY_HIGH,
