@@ -21,6 +21,7 @@
 typedef enum
 {
     MSG_NONE = 0,
+
     MSG_ADD_CLIENT,        	// add a client
     MSG_REM_CLIENT,        	// remove a client
     MSG_SEND_MESSAGE,       // send a message
@@ -29,7 +30,10 @@ typedef enum
     MSG_SET_CLIENT_LIST,    // send client list (server)
     MSG_PING_CLIENT,		// Ping a client to verify its connection
     MSG_USER,				// user-specific
-    MSG_ERROR
+    MSG_ERROR,
+
+    MSG_SUBSCRIBE,
+    MSG_UNSUBSCRIBE
 } message_t;
 
 
@@ -57,7 +61,7 @@ typedef enum
 class Message
 {
 public:
-	Message();
+	Message(message_t msg_type = MSG_NONE);
 
 	Message(std::string msg);
 
@@ -114,7 +118,8 @@ public:
 	virtual bool isErrorMessage();
 
 protected:
-	//std::string separator;
+	std::string data_separator;
+	bool dataParsed;	// 'true' if the 'data' field has been parsed
 
 	// Message fields
 	message_t type; 			// Message type
@@ -127,7 +132,10 @@ protected:
 
 	double id;
 
-	Log messageLog;
+	Log log;
+
+	// Parse Message 'data' field to initialize its specific fields
+	virtual void parseData();
 
 	virtual message_t encodeType(std::string s);
 	virtual std::string decodeType(message_t t);

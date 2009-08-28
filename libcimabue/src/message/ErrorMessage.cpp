@@ -10,17 +10,12 @@
 using namespace std;
 
 
-ErrorMessage::ErrorMessage()
-:Message()
-{
-	type = MSG_ERROR;
-}
-
 ErrorMessage::ErrorMessage(string error_msg)
-:Message()
+:Message(MSG_ERROR)
 {
-	type = MSG_ERROR;
 	data = error_msg;
+
+	log.print(LOG_DEBUG, "[o] ErrorMessage (0x%x)\n\tdata: \"%s\"\n", this, data.c_str());
 }
 
 ErrorMessage::ErrorMessage(string fromClient,
@@ -28,13 +23,20 @@ ErrorMessage::ErrorMessage(string fromClient,
                            string fromServer,
                            string toServer,
                            string content,
+                           string error_msg,
                            message_priority_t msg_priority)
         : Message(MSG_ERROR, fromClient, toClient, fromServer, toServer, content, msg_priority)
-{}
+{
+	data = error_msg;
+
+	log.print(LOG_DEBUG, "[o] ErrorMessage (0x%x)\n\tdata: \"%s\"\n", this, data.c_str());
+}
 
 
 ErrorMessage::~ErrorMessage()
-{}
+{
+	log.print(LOG_DEBUG, "[x] ErrorMessage (0x%x)\n", this);
+}
 
 
 void ErrorMessage::setErrorMessage(string error_msg)
@@ -46,4 +48,9 @@ void ErrorMessage::setErrorMessage(string error_msg)
 string ErrorMessage::getErrorMessage()
 {
 	return data;
+}
+
+void ErrorMessage::parseData()
+{
+	dataParsed = true;
 }

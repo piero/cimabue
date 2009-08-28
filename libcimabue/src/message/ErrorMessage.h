@@ -10,11 +10,10 @@
 
 #include "Message.h"
 
+
 class ErrorMessage : public Message
 {
 public:
-	ErrorMessage();
-
 	ErrorMessage(std::string error_msg);
 
     ErrorMessage(std::string fromClient,
@@ -22,12 +21,16 @@ public:
 	        std::string fromProxy,
 	        std::string toServer,
 	        std::string content,
+	        std::string error_msg,
 	        message_priority_t msg_priority = MSG_PRIORITY_NORMAL);
 
     virtual ~ErrorMessage();
 
     void setErrorMessage(std::string error_msg);
     std::string getErrorMessage();
+
+protected:
+    virtual void parseData();
 };
 
 

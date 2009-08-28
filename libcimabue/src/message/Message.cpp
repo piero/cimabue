@@ -9,8 +9,8 @@
 
 using namespace std;
 
-Message::Message()
-		: type(MSG_NONE),
+Message::Message(message_t msg_type)
+		: type(msg_type),
 		clientSrc(MSG_VOID),
 		clientDest(MSG_VOID),
 		serverSrc(MSG_VOID),
@@ -18,7 +18,8 @@ Message::Message()
 		data(MSG_VOID),
 		priority(MSG_PRIORITY_NORMAL)
 {
-	messageLog.print(LOG_PARANOID, "[o] Message: 0x%x\n", this);
+	log.print(LOG_PARANOID, "[o] Message: 0x%x\n", this);
+	dataParsed = false;
 }
 
 Message::Message(string msg)
@@ -40,12 +41,12 @@ Message::Message(message_t msg_type,
 		priority(msg_priority)
 {
 	//separator = MSG_SEPARATOR;
-	messageLog.print(LOG_PARANOID, "[o] Message: 0x%x\n", this);
+	log.print(LOG_PARANOID, "[o] Message: 0x%x\n", this);
 }
 
 Message::~Message()
 {
-	messageLog.print(LOG_PARANOID, "[x] Message: 0x%x\n", this);
+	log.print(LOG_PARANOID, "[x] Message: 0x%x\n", this);
 }
 
 int Message::Recv(int skt)
@@ -62,25 +63,25 @@ int Message::Recv(int skt)
 
 		if (rd < 0)
 		{
-			messageLog.print(LOG_ERROR, "[!] recv() failed: %s\n", strerror(errno));
+			log.print(LOG_ERROR, "[!] recv() failed: %s\n", strerror(errno));
 			return RET_ERROR;
 		}
 		else if (rd == 0)
 		{
-			messageLog.print(LOG_ERROR, "[!] Unexpected end of message\n");
+			log.print(LOG_ERROR, "[!] Unexpected end of message\n");
 			return RET_ERROR;
 		}
 
 		if (*(recv_buf + recv_bytes) == '|')
 		{
 			termination = true;
-			messageLog.print(LOG_PARANOID, "End of message found\n");
+			log.print(LOG_PARANOID, "End of message found\n");
 		}
 
 		recv_bytes++;
 	}
 
-	messageLog.print(LOG_PARANOID, "[ ] Received %d bytes\n%s\n\n", recv_bytes, recv_buf);
+	log.print(LOG_PARANOID, "[ ] Received %d bytes\n%s\n\n", recv_bytes, recv_buf);
 
 	recv_buf[recv_bytes - 1] = '\0';	// Remove termination char
 	received = string(recv_buf);
@@ -88,9 +89,9 @@ int Message::Recv(int skt)
 
 	deserialize(received);
 
-	messageLog.print(LOG_PARANOID, "--- RECEIVED MESSAGE ---\n");
+	log.print(LOG_PARANOID, "--- RECEIVED MESSAGE ---\n");
 	dump();
-	messageLog.print(LOG_PARANOID, "------------------------\n");
+	log.print(LOG_PARANOID, "------------------------\n");
 
 	return RET_SUCCESS;
 }
@@ -98,21 +99,21 @@ int Message::Recv(int skt)
 
 int Message::Reply(int skt)
 {
-	messageLog.print(LOG_PARANOID, "[ ] Replying on socket %d...\n", skt);
+	log.print(LOG_PARANOID, "[ ] Replying on socket %d...\n", skt);
 
 	string message = serialize();
 
 	if (send(skt, message.c_str(), message.size(), 0) != (int)message.size())
 	{
-		messageLog.print(LOG_ERROR, "[!] Error  replying on socket %d : %s\n",
-		                 skt, strerror(errno));
+		log.print(LOG_ERROR, "[!] Error  replying on socket %d : %s\n",
+		          skt, strerror(errno));
 
 		return RET_ERROR;
 	}
 
-	messageLog.print(LOG_PARANOID, "-------- SENT REPLY MESSAGE --------\n");
+	log.print(LOG_PARANOID, "-------- SENT REPLY MESSAGE --------\n");
 	dump();
-	messageLog.print(LOG_PARANOID, "------------------------------------\n");
+	log.print(LOG_PARANOID, "------------------------------------\n");
 
 	return RET_SUCCESS;
 }
@@ -120,14 +121,14 @@ int Message::Reply(int skt)
 
 Message* Message::Send(std::string ip, unsigned int port)
 {
-	messageLog.print(LOG_PARANOID, "[ ] Sending message to %s:%d\n", ip.c_str(), port);
+	log.print(LOG_PARANOID, "[ ] Sending message to %s:%d\n", ip.c_str(), port);
 
 	int skt = socket(PF_INET, SOCK_STREAM, 0);
 
 	if (skt < 0)
 	{
-		messageLog.print(LOG_ERROR, "[!] Error creating socket to %s:%d - %s\n",
-		                 ip.c_str(), port, strerror(errno));
+		log.print(LOG_ERROR, "[!] Error creating socket to %s:%d - %s\n",
+		          ip.c_str(), port, strerror(errno));
 
 		return new Message(MSG_ERROR,
 		                   MSG_VOID, MSG_VOID,
@@ -150,8 +151,8 @@ Message* Message::Send(std::string ip, unsigned int port)
 
 	if (connect(skt, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0)
 	{
-		messageLog.print(LOG_ERROR, "[!] Error connecting to %s:%d - %s\n",
-		                 ip.c_str(), port, strerror(errno));
+		log.print(LOG_ERROR, "[!] Error connecting to %s:%d - %s\n",
+		          ip.c_str(), port, strerror(errno));
 
 		close(skt);
 		return new Message(MSG_ERROR,
@@ -160,14 +161,14 @@ Message* Message::Send(std::string ip, unsigned int port)
 		                   "Error connecting");
 	}
 
-	messageLog.print(LOG_DEBUG, "[ ] Sending message to %s:%d...\n", ip.c_str(), port);
+	log.print(LOG_DEBUG, "[ ] Sending message to %s:%d...\n", ip.c_str(), port);
 
 	string message = serialize();
 	int sent_bytes = send(skt, message.c_str(), message.size(), 0);
 	if (sent_bytes != (int)message.size())
 	{
-		messageLog.print(LOG_ERROR, "[!] Error sending message to %s:%d - %s\n",
-		                 ip.c_str(), port, strerror(errno));
+		log.print(LOG_ERROR, "[!] Error sending message to %s:%d - %s\n",
+		          ip.c_str(), port, strerror(errno));
 
 		close(skt);
 		return new Message(MSG_ERROR,
@@ -176,9 +177,9 @@ Message* Message::Send(std::string ip, unsigned int port)
 		                   "Error sending message");
 	}
 
-	messageLog.print(LOG_PARANOID, "--- SENT MESSAGE (%s:%d) ---\n", ip.c_str(), port);
+	log.print(LOG_PARANOID, "--- SENT MESSAGE (%s:%d) ---\n", ip.c_str(), port);
 	dump();
-	messageLog.print(LOG_PARANOID, "---------------------------- %d bytes\n", sent_bytes);
+	log.print(LOG_PARANOID, "---------------------------- %d bytes\n", sent_bytes);
 
 
 	// Wait for a reply
@@ -188,7 +189,7 @@ Message* Message::Send(std::string ip, unsigned int port)
 
 	if (ret != RET_SUCCESS)
 	{
-		messageLog.print(LOG_ERROR, "[!] Error receiving reply\n");
+		log.print(LOG_ERROR, "[!] Error receiving reply\n");
 
 		close(skt);
 		delete reply;
@@ -301,15 +302,15 @@ string Message::serialize()
 	serialized += MSG_SEPARATOR + decodePriority(priority);
 	serialized += MSG_END;
 
-	messageLog.print(LOG_PARANOID, "Serialized message: \"%s\" (%d bytes)\n",
-	                 serialized.c_str(), serialized.size());
+	log.print(LOG_PARANOID, "Serialized message: \"%s\" (%d bytes)\n",
+	          serialized.c_str(), serialized.size());
 
 	return serialized;
 }
 
 void Message::deserialize(string s)
 {
-	messageLog.print(LOG_PARANOID, "Deserializing: \"%s\"...\n", s.c_str());
+	log.print(LOG_PARANOID, "Deserializing: \"%s\"...\n", s.c_str());
 
 	string::size_type lastPos = s.find_first_not_of(MSG_SEPARATOR, 0);
 	string::size_type pos = s.find_first_of(MSG_SEPARATOR, 0);
@@ -341,7 +342,13 @@ void Message::deserialize(string s)
 
 message_t Message::encodeType(std::string s)
 {
-	if (s == "MSG_ADD_CLIENT")
+	if (s == "MSG_SUBSCRIBE")
+		return MSG_SUBSCRIBE;
+
+	else if (s == "MSG_UNSUBSCRIBE")
+		return MSG_UNSUBSCRIBE;
+
+	else if (s == "MSG_ADD_CLIENT")
 		return MSG_ADD_CLIENT;
 
 	else if (s == "MSG_UPDATE_ADD_CLIENTS")
@@ -375,6 +382,14 @@ string Message::decodeType(message_t t)
 
 	switch (t)
 	{
+	case MSG_SUBSCRIBE:
+		ret = "MSG_SUBSCRIBE";
+		break;
+
+	case MSG_UNSUBSCRIBE:
+		ret = "MSG_UNSUBSCRIBE";
+		break;
+
 	case MSG_ADD_CLIENT:
 		ret = "MSG_ADD_CLIENT";
 		break;
@@ -436,13 +451,13 @@ string Message::decodePriority(message_priority_t p)
 
 void Message::dump()
 {
-	messageLog.print(LOG_PARANOID, "Type:\t%s\n", decodeType(type).c_str());
-	messageLog.print(LOG_PARANOID, "clientSrc:\t%s\n", clientSrc.c_str());
-	messageLog.print(LOG_PARANOID, "clientDest:\t%s\n", clientDest.c_str());
-	messageLog.print(LOG_PARANOID, "serverSrc:\t%s\n", serverSrc.c_str());
-	messageLog.print(LOG_PARANOID, "serverDest:\t%s\n", serverDest.c_str());
-	messageLog.print(LOG_PARANOID, "Data:\t%s\n", data.c_str());
-	messageLog.print(LOG_PARANOID, "Prio:\t%d\n", priority);
+	log.print(LOG_PARANOID, "Type:\t%s\n", decodeType(type).c_str());
+	log.print(LOG_PARANOID, "clientSrc:\t%s\n", clientSrc.c_str());
+	log.print(LOG_PARANOID, "clientDest:\t%s\n", clientDest.c_str());
+	log.print(LOG_PARANOID, "serverSrc:\t%s\n", serverSrc.c_str());
+	log.print(LOG_PARANOID, "serverDest:\t%s\n", serverDest.c_str());
+	log.print(LOG_PARANOID, "Data:\t%s\n", data.c_str());
+	log.print(LOG_PARANOID, "Prio:\t%d\n", decodePriority(priority).c_str());
 }
 
 
