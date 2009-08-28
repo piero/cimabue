@@ -438,9 +438,14 @@ string Message::decodeType(message_t t)
 }
 
 
-string Message::typeToString(message_t type)
+string Message::typeToString()
 {
 	return decodeType(type);
+}
+
+string Message::priorityToString()
+{
+	return decodePriority(priority);
 }
 
 
@@ -466,7 +471,6 @@ void Message::dump()
 	log.print(LOG_PARANOID, "Data:\t%s\n", data.c_str());
 	log.print(LOG_PARANOID, "Prio:\t%d\n", decodePriority(priority).c_str());
 }
-
 
 bool Message::isErrorMessage()
 {

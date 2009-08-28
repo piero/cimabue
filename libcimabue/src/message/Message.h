@@ -22,14 +22,15 @@ typedef enum
 {
     MSG_NONE = 0,
 
-    MSG_ADD_CLIENT,        	// add a client
-    MSG_REM_CLIENT,        	// remove a client
-    MSG_SEND_MESSAGE,       // send a message
+    MSG_ADD_CLIENT,        		// add a client
+    MSG_REM_CLIENT,        		// remove a client
+    MSG_SEND_MESSAGE,       	// send a message
     MSG_UPDATE_ADD_CLIENTS,		// update client list (server -> clients)
     MSG_UPDATE_REM_CLIENTS,		// update client list (server -> clients)
-    MSG_SET_CLIENT_LIST,    // send client list (server)
-    MSG_PING_CLIENT,		// Ping a client to verify its connection
-    MSG_USER,				// user-specific
+    MSG_SET_CLIENT_LIST,    	// send client list (server)
+    MSG_PING_CLIENT,			// Ping a client to verify its connection
+    MSG_USER,					// user-specific
+
     MSG_ERROR,
 
     MSG_SUBSCRIBE,
@@ -83,7 +84,7 @@ public:
 	// Type
 	virtual message_t getType();
 	virtual void setType(message_t t);
-	virtual std::string typeToString(message_t type);
+	virtual std::string typeToString();
 
 	// Client Source
 	virtual std::string getClientSource();
@@ -108,6 +109,7 @@ public:
 	// Priority
 	virtual message_priority_t getPriority();
 	virtual void setPriority(message_priority_t p);
+	std::string priorityToString();
 
 	virtual void copyTo(Message &to);
 
