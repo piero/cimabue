@@ -348,6 +348,9 @@ message_t Message::encodeType(std::string s)
 	else if (s == "MSG_UNSUBSCRIBE")
 		return MSG_UNSUBSCRIBE;
 
+	else if (s == "MSG_INFORM")
+		return MSG_INFORM;
+
 	else if (s == "MSG_ADD_CLIENT")
 		return MSG_ADD_CLIENT;
 
@@ -388,6 +391,10 @@ string Message::decodeType(message_t t)
 
 	case MSG_UNSUBSCRIBE:
 		ret = "MSG_UNSUBSCRIBE";
+		break;
+
+	case MSG_INFORM:
+		ret = "MSG_INFORM";
 		break;
 
 	case MSG_ADD_CLIENT:

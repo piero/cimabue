@@ -33,7 +33,8 @@ typedef enum
     MSG_ERROR,
 
     MSG_SUBSCRIBE,
-    MSG_UNSUBSCRIBE
+    MSG_UNSUBSCRIBE,
+    MSG_INFORM
 } message_t;
 
 
