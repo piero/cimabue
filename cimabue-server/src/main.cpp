@@ -5,7 +5,6 @@
  *      Author: piero
  */
 
-#include <cimabue.h>
 #include <iostream>
 #include <signal.h>
 #include "StateManager.h"

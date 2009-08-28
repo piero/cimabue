@@ -8,7 +8,7 @@
 #ifndef CIMABUESERVER_H_
 #define CIMABUESERVER_H_
 
-#include <nodes/Node.h>
+#include <node/Node.h>
 
 typedef enum
 {

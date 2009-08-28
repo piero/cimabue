@@ -6,7 +6,6 @@
 */
 
 
-#include <cimabue.h>
 #include <iostream>
 #include "StateManager.h"
 #include "view/ConsoleView.h"

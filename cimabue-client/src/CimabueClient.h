@@ -8,7 +8,7 @@
 #ifndef CIMABUECLIENT_H_
 #define CIMABUECLIENT_H_
 
-#include <nodes/Node.h>
+#include <node/Node.h>
 #include "Event.h"
 
 #define DATA_SEPARATOR	"@"

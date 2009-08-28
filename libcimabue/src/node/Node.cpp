@@ -11,7 +11,7 @@ using namespace std;
 
 Node::Node(unsigned short port,
            long select_timeout)
-        : nodePort(port),
+        : listenPort(port),
         listen_thread_is_running(false),
         process_thread_is_running(false),
         die(false),
@@ -147,10 +147,10 @@ void* Node::do_listen_thread(void *arg)
     me->listen_thread_is_running = true;
 
     // Create listening sockets
-    me->nodeSocket = me->CreateListeningSocket(me->nodePort);
+    me->listenSocket = me->CreateListeningSocket(me->listenPort);
 
-    if (me->nodeSocket > maxDescriptor)
-        maxDescriptor = me->nodeSocket;
+    if (me->listenSocket > maxDescriptor)
+        maxDescriptor = me->listenSocket;
 
     // Init select() parameters
     fd_set sockSet;
@@ -160,7 +160,7 @@ void* Node::do_listen_thread(void *arg)
     while (!me->die)
     {
         FD_ZERO(&sockSet);
-        FD_SET(me->nodeSocket, &sockSet);
+        FD_SET(me->listenSocket, &sockSet);
 
         selTimeout.tv_sec = me->selectTimeout;
         selTimeout.tv_usec = 0;
@@ -169,20 +169,20 @@ void* Node::do_listen_thread(void *arg)
             me->log.print(LOG_PARANOID, "Select timeout (%ld) - still alive\n", me->selectTimeout);
         else
         {
-            if (FD_ISSET(me->nodeSocket, &sockSet))
+            if (FD_ISSET(me->listenSocket, &sockSet))
             {
-                me->log.print(LOG_PARANOID, "[ ] Request on port %d\n", me->nodePort);
-                me->HandleTCPRequest(me->AcceptTCPConnection(me->nodeSocket), me->nodePort);
+                me->log.print(LOG_PARANOID, "[ ] Request on port %d\n", me->listenPort);
+                me->HandleTCPRequest(me->AcceptTCPConnection(me->listenSocket), me->listenPort);
             }
         }
     }
 
     // Close listening sockets
-    if (close(me->nodeSocket) < 0)
+    if (close(me->listenSocket) < 0)
         me->log.print(LOG_ERROR, "[!] Error closing socket %d: %s\n",
-                      me->nodeSocket, strerror(errno));
+                      me->listenSocket, strerror(errno));
     else
-        me->log.print(LOG_PARANOID, "[x] Socket %d\n", me->nodeSocket);
+        me->log.print(LOG_PARANOID, "[x] Socket %d\n", me->listenSocket);
 
     me->listen_thread_is_running = false;
     me->log.print(LOG_PARANOID, "[x] Listen thread\n");
@@ -283,7 +283,7 @@ void Node::HandleTCPRequest(int clientSock, unsigned short port)
     new_message.socket = clientSock;
     new_message.msg = msg;
 
-    if (port == nodePort)
+    if (port == listenPort)
     {
         messageQueue.push(new_message);
 
@@ -321,7 +321,7 @@ string Node::getIpAddress()
 
 unsigned short Node::getPort()
 {
-    return nodePort;
+    return listenPort;
 }
 
 string Node::parseNickname(string nodeData)
@@ -357,7 +357,7 @@ bool Node::parseNicknameAndName(string *nickname, string *node_name)
     return retval;
 }
 
-bool Node::parseAddress(string *nodeAddress, unsigned int *nodePort)
+bool Node::parseAddress(string *nodeAddress, unsigned int *listenPort)
 {
     bool retval = false;
 
@@ -370,7 +370,7 @@ bool Node::parseAddress(string *nodeAddress, unsigned int *nodePort)
         *nodeAddress = tokens.front();
         tokens.pop_front();
 
-        *nodePort = atoi(tokens.front().c_str());
+        *listenPort = atoi(tokens.front().c_str());
 
         retval = true;
     }
@@ -378,7 +378,7 @@ bool Node::parseAddress(string *nodeAddress, unsigned int *nodePort)
     return retval;
 }
 
-bool Node::parseNicknameAndAddress(string *nodeNickname, string *nodeAddress, unsigned int *nodePort)
+bool Node::parseNicknameAndAddress(string *nodeNickname, string *nodeAddress, unsigned int *listenPort)
 {
     bool retval = false;
 
@@ -392,7 +392,7 @@ bool Node::parseNicknameAndAddress(string *nodeNickname, string *nodeAddress, un
         *nodeAddress = tokens.front();
         tokens.pop_front();
 
-        *nodePort = atoi(tokens.front().c_str());
+        *listenPort = atoi(tokens.front().c_str());
 
         retval = true;
     }

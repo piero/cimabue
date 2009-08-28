@@ -109,12 +109,12 @@ protected:
     std::string parseNickname(std::string nodeData);
 
     // Extract IP and PORT from nodeAddress
-    // and put the result in nodeAddress (overwriting it) and nodePort
-    bool parseAddress(std::string *nodeAddress, unsigned int *nodePort);
+    // and put the result in nodeAddress (overwriting it) and listenPort
+    bool parseAddress(std::string *nodeAddress, unsigned int *listenPort);
 
     // Extract nickname, IP and Port from nodeAddress
-    // and put the result in nodeNickname, nodeAddress (overwriting it) and nodePort
-    bool parseNicknameAndAddress(std::string *nodeNickname, std::string *nodeAddress, unsigned int *nodePort);
+    // and put the result in nodeNickname, nodeAddress (overwriting it) and listenPort
+    bool parseNicknameAndAddress(std::string *nodeNickname, std::string *nodeAddress, unsigned int *listenPort);
 
     static void* do_listen_thread(void *arg);
     static void* do_process_thread(void *arg);
@@ -133,10 +133,10 @@ protected:
 
     std::string name;
     std::string ip;
+    unsigned short listenPort;
 
-    // Arrays of listening ports and sockets, used by select()
-    unsigned short nodePort;
-    int nodeSocket;
+    // Listening socket
+    int listenSocket;
 
     // Message queues
     MessageQueue messageQueue;
