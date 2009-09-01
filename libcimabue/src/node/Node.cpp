@@ -68,13 +68,13 @@ Node::~Node()
     sem_destroy(&ipc_sem);
 }
 
-void Node::publish(Event *event)
+void Node::publish(Message *event)
 {
     list<Subscription*>::iterator sub;
 
     for (sub = subscriptions.begin(); sub != subscriptions.end(); sub++)
     {
-        if (((*sub)->getEventType() == event->getType()) &&
+        if (((*sub)->getEventType() == event->typeToString()) &&
                 (((*sub)->getFilter() == NULL ) ||
                  ((*sub)->getFilter()->apply(event))))
         {
@@ -82,7 +82,7 @@ void Node::publish(Event *event)
         }
     }
 
-    printf("Published event: %s\n", event->getType().c_str());
+    printf("Published event: %s\n", event->typeToString().c_str());
 }
 
 void Node::subscribe(string event_type, Filter *filter, Subscriber *subscriber)

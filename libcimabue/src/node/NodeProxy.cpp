@@ -14,7 +14,8 @@ NodeProxy::NodeProxy(unsigned short port, long select_timeout)
 NodeProxy::~NodeProxy()
 {}
 
-void NodeProxy::publish(Event *event)
+/*
+void NodeProxy::publish(Message *event)
 {}
 
 void NodeProxy::subscribe(std::string event_type, Filter *filter, Subscriber *subscriber)
@@ -22,6 +23,7 @@ void NodeProxy::subscribe(std::string event_type, Filter *filter, Subscriber *su
 
 void NodeProxy::unsubscribe(std::string event_type, Filter *filter, Subscriber *subscriber)
 {}
+*/
 
-void NodeProxy::inform(Event *event)
+void NodeProxy::inform(Message *event)
 {}

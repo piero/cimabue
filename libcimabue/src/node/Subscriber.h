@@ -8,7 +8,7 @@
 #ifndef SUBSCRIBER_H_
 #define SUBSCRIBER_H_
 
-#include "../Event.h"
+#include "../message/Message.h"
 
 class Subscriber
 {
@@ -16,7 +16,7 @@ public:
 	Subscriber() {}
 	virtual ~Subscriber() {}
 
-	virtual void inform(Event *event) = 0;
+	virtual void inform(Message *event) = 0;
 };
 
 #endif /* SUBSCRIBER_H_ */

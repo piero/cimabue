@@ -8,7 +8,7 @@
 #ifndef CIMABUESERVER_H_
 #define CIMABUESERVER_H_
 
-#include <node/Node.h>
+#include <node/NodeProxy.h>
 
 typedef enum
 {
@@ -18,7 +18,7 @@ typedef enum
 } server_role_t;
 
 
-class CimabueServer : public Node
+class CimabueServer : public NodeProxy
 {
 public:
     CimabueServer(unsigned short port = NODE_PORT_SERVER_DOWN, bool enablePing = false);

@@ -8,6 +8,7 @@
 #ifndef FILTER_H_
 #define FILTER_H_
 
+#include "message/Message.h"
 #include "Event.h"
 
 
@@ -27,7 +28,7 @@ public:
         return eventType;
     }
 
-    virtual bool apply(Event *event) = 0;
+    virtual bool apply(Message *event) = 0;
 
 protected:
     std::string eventType;

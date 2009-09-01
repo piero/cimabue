@@ -10,7 +10,7 @@
 using namespace std;
 
 CimabueServer::CimabueServer(unsigned short port, bool enablePing) :
-		Node(port)
+		NodeProxy(port)
 {
 	pingClient_is_running = false;
 	ping_enabled = enablePing;
@@ -67,8 +67,9 @@ void* CimabueServer::do_pingClient(void *myself)
 			me->log.print(LOG_PARANOID, "[ ] Pinging %s...\n",
 			              client_iter->first.c_str());
 
-			Message ping(MSG_PING_CLIENT, MSG_VOID, client_iter->first,
-			             me->name, MSG_VOID, MSG_VOID);
+			PingMessage ping(MSG_VOID, client_iter->first,
+			                 me->name, MSG_VOID,
+			                 MSG_VOID, MSG_VOID);
 
 			// Get Client IP and port
 			string dest_ip = client_iter->second;
@@ -173,8 +174,7 @@ int CimabueServer::processMessage(Message *msg, int skt)
 		log.print(LOG_ERROR, "[!] Message addressed to %s, but I'm %s\n",
 		          msg->getServerDest().c_str(), name.c_str());
 
-		answer = new ErrorMessage();
-		((ErrorMessage*) answer)->setErrorMessage("Wrong destination");
+		answer = new ErrorMessage("Wrong_destination");
 	}
 	else
 	{
@@ -194,8 +194,7 @@ int CimabueServer::processMessage(Message *msg, int skt)
 	{
 		ret = answer->Reply(skt);
 		delete answer;
-		log.print(LOG_DEBUG, "[ ] Replied to %s message\n", msg->typeToString(
-		              msg->getType()).c_str());
+		log.print(LOG_DEBUG, "[ ] Replied to %s message\n", msg->typeToString().c_str());
 	}
 
 	if (close(skt) < 0)
@@ -246,7 +245,7 @@ Message* CimabueServer::executeSendMessage(Message *msg)
 		log.print(LOG_ERROR, "[!] Destination %s not found!\n",
 		          msg->getClientDest().c_str());
 
-		return new ErrorMessage("DESTINATION NOT FOUND");
+		return new ErrorMessage("Destination_not_found");
 	}
 }
 

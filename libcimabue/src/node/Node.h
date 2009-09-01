@@ -10,9 +10,15 @@
 
 #include <stdlib.h>
 #include <map>
-#include "../Event.h"
 #include "../Filter.h"
 #include "../message/MessageQueue.h"
+#include "../message/AddClientMessage.h"
+#include "../message/ErrorMessage.h"
+#include "../message/InformMessage.h"
+#include "../message/PingMessage.h"
+#include "../message/SendMessage.h"
+#include "../message/SubscribeMessage.h"
+#include "../message/UnsubscribeMessage.h"
 
 #if !defined(__APPLE__)
 #	include <net/if.h>
@@ -89,9 +95,9 @@ public:
     void setTimeout(long timeout);
 
     // Event Notifier pattern functions
-    void publish(Event *event);
-    void subscribe(std::string event_type, Filter *filter, Subscriber *subscriber);
-    void unsubscribe(std::string event_type, Filter *filter, Subscriber *subscriber);
+    virtual void publish(Message *event);
+    virtual void subscribe(std::string event_type, Filter *filter, Subscriber *subscriber);
+    virtual void unsubscribe(std::string event_type, Filter *filter, Subscriber *subscriber);
 
     // TODO: Make it protected
     virtual int processMessage(Message *msg, int skt) = 0;

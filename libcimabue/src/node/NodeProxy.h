@@ -13,14 +13,17 @@
 
 class NodeProxy : public Node, public Subscriber
 {
+public:
 	NodeProxy(unsigned short port, long select_timeout = 5);
 	~NodeProxy();
 
-    // Event Notifier pattern functions
-    void publish(Event *event);
-    void subscribe(std::string event_type, Filter *filter, Subscriber *subscriber);
-    void unsubscribe(std::string event_type, Filter *filter, Subscriber *subscriber);
-    void inform(Event *event);
+	// Event Notifier pattern functions
+	/*
+	void publish(Message *event);
+	void subscribe(std::string event_type, Filter *filter, Subscriber *subscriber);
+	void unsubscribe(std::string event_type, Filter *filter, Subscriber *subscriber);
+	*/
+	void inform(Message *event);
 };
 
 

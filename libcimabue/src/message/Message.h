@@ -140,8 +140,10 @@ protected:
 
 	Log log;
 
+	/*
 	// Parse Message 'data' field to initialize its specific fields
 	virtual void parseData();
+	*/
 
 	virtual message_t encodeType(std::string s);
 	virtual std::string decodeType(message_t t);

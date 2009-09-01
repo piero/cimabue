@@ -17,7 +17,7 @@ public:
 
 	PingMessage(std::string fromClient,
 	            std::string toClient,
-	            std::string fromProxy,
+	            std::string fromServer,
 	            std::string toServer,
 	            std::string content,
 	            std::string ping_data,
