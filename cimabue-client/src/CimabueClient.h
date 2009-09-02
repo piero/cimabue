@@ -8,15 +8,14 @@
 #ifndef CIMABUECLIENT_H_
 #define CIMABUECLIENT_H_
 
-#include <node/Node.h>
-#include "Event.h"
+#include <node/ActiveNode.h>
 
 #define DATA_SEPARATOR	"@"
 
 
 class StateManager;
 
-class CimabueClient : public Node
+class CimabueClient : public ActiveNode
 {
 public:
     CimabueClient(StateManager *caller);

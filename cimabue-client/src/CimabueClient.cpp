@@ -11,7 +11,7 @@
 using namespace std;
 
 CimabueClient::CimabueClient(StateManager *caller) :
-		Node(caller->getClientPort())
+		ActiveNode(caller->getClientPort())
 {
 	manager = caller;
 
