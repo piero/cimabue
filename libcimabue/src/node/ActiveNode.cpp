@@ -30,7 +30,6 @@ ActiveNode::ActiveNode(unsigned short port,
 #endif
 
 
-
 	// The double-threaded structure gives us async requests
 	pthread_create(&process_thread, NULL, do_process_thread, this);
 	pthread_create(&listen_thread, NULL, do_listen_thread, this);

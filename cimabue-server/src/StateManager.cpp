@@ -53,7 +53,7 @@ void StateManager::startServer()
 {
     log.print(LOG_DEBUG, "[ ] Creating Cimabue Server...\n");
 
-    server = new CimabueServer(server_port, true);
+    server = new CimabueServer(server_port);
 
     if (server != NULL)
         log.print(LOG_DEBUG, "[ ] Created Cimabue Server (%d)\n", server_port);

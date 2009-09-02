@@ -14,7 +14,7 @@
 class SendMessage : public Message
 {
 public:
-	SendMessage(std::string message);
+	SendMessage(std::string sender_nick, std::string dest_nick, std::string message);
 
 	SendMessage(std::string fromClient,
 	            std::string toClient,
@@ -27,10 +27,17 @@ public:
 	virtual ~SendMessage();
 
 	void setMessage(std::string message);
+
+	std::string getSenderNickname();
+	std::string getReceiverNickname();
 	std::string getMessage();
 
 protected:
 	virtual void parseData();
+
+	std::string sender_nickname;
+	std::string receiver_nickname;
+	std::string message;
 };
 
 

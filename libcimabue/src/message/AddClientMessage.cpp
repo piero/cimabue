@@ -10,7 +10,7 @@
 using namespace std;
 
 
-AddClientMessage::AddClientMessage(string client_ip, unsigned short client_port)
+AddClientMessage::AddClientMessage(string client_nickname, string client_ip, unsigned short client_port)
 		: Message(MSG_ADD_CLIENT)
 {
 	data_separator = "#";
@@ -18,7 +18,9 @@ AddClientMessage::AddClientMessage(string client_ip, unsigned short client_port)
 	char client_port_s[8];
 	sprintf(client_port_s, "%d", client_port);
 
-	data = client_ip;
+	data = client_nickname;
+	data += data_separator;
+	data += client_ip;
 	data += data_separator;
 	data += client_port_s;
 
@@ -28,6 +30,14 @@ AddClientMessage::AddClientMessage(string client_ip, unsigned short client_port)
 AddClientMessage::~AddClientMessage()
 {
 	log.print(LOG_DEBUG, "[x] AddClientMessage (0x%x)\n", this);
+}
+
+string AddClientMessage::getClientNickname()
+{
+	if (!dataParsed)
+			parseData();
+
+	return clientNickname;
 }
 
 string AddClientMessage::getClientIP()
@@ -60,7 +70,9 @@ void AddClientMessage::parseData()
 		pos = data.find_first_of(data_separator, lastPos);
 	}
 
-	clientIP = encodeType(tokens.front());
+	clientNickname = tokens.front();
+	tokens.pop_front();
+	clientIP = tokens.front();
 	tokens.pop_front();
 	clientPort = (unsigned short)atoi(tokens.front().c_str());
 	tokens.pop_front();

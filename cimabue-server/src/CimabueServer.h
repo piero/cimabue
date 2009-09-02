@@ -8,78 +8,75 @@
 #ifndef CIMABUESERVER_H_
 #define CIMABUESERVER_H_
 
-#include <node/NodeProxy.h>
+#include <node/ActiveNode.h>
+#include "ClientProxyNode.h"
 
 typedef enum
 {
-	SERVER_ROLE_MASTER,
-	SERVER_ROLE_BACKUP,
-	SERVER_ROLE_IDLE
+    SERVER_ROLE_MASTER,
+    SERVER_ROLE_BACKUP,
+    SERVER_ROLE_IDLE
 } server_role_t;
 
+typedef struct
+{
+	std::string ip;
+	unsigned short port;
+}
+server_t;
 
-class CimabueServer : public NodeProxy
+typedef struct
+{
+	std::string nickname;
+	std::string ip;
+	unsigned short port;
+}
+client_t;
+
+
+class CimabueServer : public ActiveNode
 {
 public:
-    CimabueServer(unsigned short port = NODE_PORT_SERVER_DOWN, bool enablePing = false);
-    virtual ~CimabueServer();
+	CimabueServer(unsigned short port = NODE_PORT_SERVER_DOWN);
+	virtual ~CimabueServer();
 
-    unsigned int getServerPort();
+	unsigned int getServerPort();
 
-    server_role_t getRole();
+	server_role_t getRole();
 
 private:
-    static void* do_listen(void *myself);
-    int processMessage(Message *msg, int skt);
+	static void* do_listen(void *myself);
+	int processMessage(Message *msg, int skt);
 
-    // Execute requests
-    Message* executeSendMessage(Message *msg);
-    Message* executeAddClient(Message *msg);
+	// Execute requests
+	Message* executeSendMessage(SendMessage *msg);
+	Message* executeAddClient(AddClientMessage *msg);
 
-    void updateClientListAdd(Message *msg);
-    void updateClientListRem(std::string node_name);
+	void updateClientListAdd(Message *msg);
+	void updateClientListRem(std::string node_name);
 
-    // Ping connected proxies
-    pthread_t pingClient_tid;
-    bool pingClient_is_running;
-    static void* do_pingClient(void *myself);
-    bool ping_enabled;
+	// Association ClientName --> ClientProxyNode
+	std::map<std::string, ClientProxyNode*> client_proxies;
 
-    // Do I have the Client in my list?
-    bool haveClient(std::string clientName);
+	unsigned short next_port;
 
-    std::string getClientAddress(std::string clientName);
-    void removeClient(std::string clientName);
+	// Do I have the Client in my list?
+	bool haveClient(std::string clientName);
 
-    // Get the IP of a given Server in serverList
-    std::string getServerAddress(std::string const serverName);
+	bool getClient(std::string clientName, client_t *client);
+	void removeClient(std::string clientName);
 
-    // Association: ServerName -> Server IP address
-    std::map<std::string, std::string> serverNameToIPMap;
-    pthread_mutex_t serverList_mutex;
+	bool getServer(std::string serverName, server_t *server);
 
-    // Association: Client Nickname -> ClientName
-    std::map<std::string, std::string> clientNicknameToName;
-    pthread_mutex_t clientNicknameList_mutex;
+	// Association: ServerName -> Server structure (ip, port)
+	std::map<std::string, server_t> serverList;
+	pthread_mutex_t serverList_mutex;
 
-    /*
-     * Reminder: The association Client Nickname -> ClientName is only used by Clients,
-     * 			 because the Server doesn't care about nicknames:  they are not unique
-     * 			 and should be ignored at this level.
-     * What happens is that the Server sends ClientNickName -> ClientName to clients
-     * just to update their list. A user chooses the destination nickname and the Client
-     * translates it into the corresponding ClientName, which is sent to the Server.
-     */
+	// Association: ClientName -> Client structure (nickname, ip, port)
+	std::map<std::string, client_t> clientList;
+	pthread_mutex_t clientList_mutex;
 
-    // Association: ClientName -> Client IP address
-    std::map<std::string, std::string> clientNameToIPMap;
-    pthread_mutex_t clientNameList_mutex;
-
-    // Association clientName --> last_ping_timestamp
-    std::map<std::string, timestamp_t> clientPingList;
-    pthread_mutex_t clientPingList_mutex;
-
-    server_role_t role;
+	server_role_t role;
 };
 
 

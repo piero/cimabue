@@ -9,148 +9,25 @@
 
 using namespace std;
 
-CimabueServer::CimabueServer(unsigned short port, bool enablePing) :
-		NodeProxy(port)
+CimabueServer::CimabueServer(unsigned short port) :
+		ActiveNode(port)
 {
-	pingClient_is_running = false;
-	ping_enabled = enablePing;
 	role = SERVER_ROLE_IDLE;
+	next_port = port + 1;
 
 	log.print(LOG_DEBUG, "CimabueServer()\n");
 
 	pthread_mutex_init(&serverList_mutex, NULL);
-	pthread_mutex_init(&clientNameList_mutex, NULL);
-	pthread_mutex_init(&clientPingList_mutex, NULL);
-	pthread_mutex_init(&clientNicknameList_mutex, NULL);
-
-	if (ping_enabled)
-	{
-		// Ping connected clients
-		if (pthread_create(&pingClient_tid, NULL, do_pingClient, this) != 0)
-		{
-			log.print(LOG_ERROR, "[!] Error creating pinging thread\n");
-		}
-	}
+	pthread_mutex_init(&clientList_mutex, NULL);
 }
 
 CimabueServer::~CimabueServer()
 {
-	if (pingClient_is_running)
-	{
-		// Join pingProxy thread
-		if (pthread_join(pingClient_tid, NULL) != 0)
-			log.print(LOG_ERROR, "[!] Error joining proxy_ping thread\n");
-	}
-
 	pthread_mutex_destroy(&serverList_mutex);
-	pthread_mutex_destroy(&clientNameList_mutex);
-	pthread_mutex_destroy(&clientPingList_mutex);
-	pthread_mutex_destroy(&clientNicknameList_mutex);
+	pthread_mutex_destroy(&clientList_mutex);
 
 	log.print(LOG_DEBUG, "[x] Server\n");
 }
-
-void* CimabueServer::do_pingClient(void *myself)
-{
-	CimabueServer *me = (CimabueServer*) myself;
-	me->pingClient_is_running = true;
-
-	while (!me->die)
-	{
-		// Send a PING_PROXY message to each connected client
-		map<string, string>::iterator client_iter;
-		pthread_mutex_lock(&me->clientNameList_mutex);
-
-		for (client_iter = me->clientNameToIPMap.begin(); client_iter
-		        != me->clientNameToIPMap.end(); client_iter++)
-		{
-			me->log.print(LOG_PARANOID, "[ ] Pinging %s...\n",
-			              client_iter->first.c_str());
-
-			PingMessage ping(MSG_VOID, client_iter->first,
-			                 me->name, MSG_VOID,
-			                 MSG_VOID, MSG_VOID);
-
-			// Get Client IP and port
-			string dest_ip = client_iter->second;
-			unsigned int dest_port;
-			me->parseAddress(&dest_ip, &dest_port);
-
-			Message *pong = ping.Send(dest_ip, dest_port);
-
-			if (!pong->isErrorMessage())
-			{
-				// Update timestamp
-				map<string, timestamp_t>::iterator ping_iter;
-				pthread_mutex_lock(&me->clientPingList_mutex);
-				ping_iter = me->clientPingList.find(client_iter->first);
-
-				if (ping_iter == me->clientPingList.end())
-					me->log.print(LOG_ERROR,
-					              "[!] Client not found in ping list!\n");
-
-				ping_iter->second = me->getTimestamp();
-
-				me->log.print(LOG_PARANOID,
-				              "[ ] Updated timestamp: %s - %ld\n",
-				              ping_iter->first.c_str(), ping_iter->second);
-				pthread_mutex_unlock(&me->clientPingList_mutex);
-			}
-			else
-				me->log.print(LOG_ERROR, "[!] Error pinging %s: %s\n",
-				              client_iter->first.c_str(),
-				              ((ErrorMessage*) pong)->getErrorMessage().c_str());
-
-			delete pong;
-		}
-		pthread_mutex_unlock(&me->clientNameList_mutex);
-
-		// Delete timed-out clients
-		map<string, timestamp_t>::iterator ping_iter;
-		pthread_mutex_lock(&me->clientPingList_mutex);
-
-		for (ping_iter = me->clientPingList.begin(); ping_iter
-		        != me->clientPingList.end(); ping_iter++)
-		{
-			timestamp_t now = me->getTimestamp();
-			timestamp_t delta = now - ping_iter->second;
-
-			if (delta > 5 * 1E9)
-			{
-				me->log.print(LOG_INFO, "[@] Client %s timed-out (%lld)\n",
-				              ping_iter->first.c_str(), delta);
-
-				// Remove Client from related lists
-				pthread_mutex_unlock(&me->clientPingList_mutex);
-				me->updateClientListRem(ping_iter->first);
-				me->removeClient(ping_iter->first);
-				pthread_mutex_lock(&me->clientPingList_mutex);
-
-			}
-		}
-		pthread_mutex_unlock(&me->clientPingList_mutex);
-
-		sleep(5);
-	}
-
-	me->pingClient_is_running = false;
-	pthread_exit(0);
-}
-
-/*
-int CimabueServer::processUpMessage(Message *msg, int skt)
-{
-	log.print(LOG_INFO, "[ ] Processing message from another SERVER\n");
-
-	if (close(skt) < 0)
-		log.print(LOG_ERROR, "[!] Error closing socket %d: %s\n", skt,
-		          strerror(errno));
-	else
-		log.print(LOG_PARANOID, "[x] Socket %d\n", skt);
-
-	return RET_SUCCESS;
-}
-*/
 
 int CimabueServer::processMessage(Message *msg, int skt)
 {
@@ -164,7 +41,7 @@ int CimabueServer::processMessage(Message *msg, int skt)
 	// A new client doesn't know our name, but only our IP address
 	if (msg->getType() == MSG_ADD_CLIENT)
 	{
-		answer = executeAddClient(msg);
+		answer = executeAddClient((AddClientMessage*)msg);
 		update_client_list = true;
 	}
 
@@ -181,7 +58,7 @@ int CimabueServer::processMessage(Message *msg, int skt)
 		switch (msg->getType())
 		{
 		case MSG_SEND_MESSAGE:
-			answer = executeSendMessage(msg);
+			answer = executeSendMessage((SendMessage *)msg);
 			break;
 
 		default:
@@ -210,7 +87,7 @@ int CimabueServer::processMessage(Message *msg, int skt)
 	return ret;
 }
 
-Message* CimabueServer::executeSendMessage(Message *msg)
+Message* CimabueServer::executeSendMessage(SendMessage *msg)
 {
 	/* 1) Check if destination client is registered
 	 * 2) Get destination IP:port
@@ -221,14 +98,10 @@ Message* CimabueServer::executeSendMessage(Message *msg)
 	log.print(LOG_DEBUG, "CimabueServer::executeSendMessage(%s)\n",
 	          msg->getClientDest().c_str());
 
-	if (haveClient(msg->getClientDest()))
+	client_t dest_client;
+
+	if (getClient(msg->getClientDest(), &dest_client))
 	{
-		string dest_nick;
-		string dest_ip = getClientAddress(msg->getClientDest());
-		unsigned dest_port;
-
-		parseNicknameAndAddress(&dest_nick, &dest_ip, &dest_port);
-
 		Message *forward_msg = new Message();
 
 		// TODO: Do I really need to copy it?
@@ -236,7 +109,7 @@ Message* CimabueServer::executeSendMessage(Message *msg)
 		forward_msg->setServerSource(name);
 		forward_msg->setServerDest(MSG_VOID);
 
-		Message *reply = forward_msg->Send(dest_ip, dest_port);
+		Message *reply = ((SendMessage*)forward_msg)->Send(dest_client.ip, dest_client.port);
 
 		return reply;
 	}
@@ -249,34 +122,22 @@ Message* CimabueServer::executeSendMessage(Message *msg)
 	}
 }
 
-Message* CimabueServer::executeAddClient(Message *msg)
+Message* CimabueServer::executeAddClient(AddClientMessage *msg)
 {
+	client_t new_client;
+	string clientName = msg->getClientSource();
+
+	new_client.nickname = msg->getClientNickname();
+	new_client.ip = msg->getClientIP();
+	new_client.port = msg->getClientPort();
+
 	// Add client to list
-	pthread_mutex_lock(&clientNameList_mutex);
+	pthread_mutex_lock(&clientList_mutex);
+	clientList.insert(pair<string, client_t> (msg->getClientSource(), new_client));
+	pthread_mutex_unlock(&clientList_mutex);
 
-	clientNameToIPMap.insert(pair<string, string> (msg->getClientSource(),
-	                         msg->getData()));
-
-	log.print(LOG_INFO, "[+] Added Client %s --> %s (%d clients)\n",
-	          msg->getClientSource().c_str(), msg->getData().c_str(),
-	          clientNameToIPMap.size());
-
-	pthread_mutex_unlock(&clientNameList_mutex);
-
-	// Add client to ping list
-	pthread_mutex_lock(&clientPingList_mutex);
-	clientPingList.insert(pair<string, timestamp_t> (msg->getClientSource(),
-	                      getTimestamp()));
-	pthread_mutex_unlock(&clientPingList_mutex);
-
-	// Add client nickname
-	pthread_mutex_lock(&clientNicknameList_mutex);
-
-	string nickname = parseNickname(msg->getData());
-	clientNicknameToName.insert(pair<string, string> (msg->getClientSource(),
-	                            nickname));
-
-	pthread_mutex_unlock(&clientNicknameList_mutex);
+	log.print(LOG_DEBUG, "[+] Added client: \"%s\" (%s:%d)\n",
+	          new_client.nickname.c_str(), new_client.ip.c_str(), new_client.port);
 
 	// Reply to Client
 	return new Message(MSG_ADD_CLIENT, MSG_VOID, msg->getClientSource(), name,
@@ -285,6 +146,8 @@ Message* CimabueServer::executeAddClient(Message *msg)
 
 void CimabueServer::updateClientListAdd(Message *msg)
 {
+	// TODO TODO TODO TODO TODO TODO TODO
+	/*
 	map<string, string>::iterator clientListIter;
 
 	pthread_mutex_lock(&clientNameList_mutex);
@@ -342,16 +205,19 @@ void CimabueServer::updateClientListAdd(Message *msg)
 	}
 
 	pthread_mutex_unlock(&clientNameList_mutex);
+	*/
 }
 
 void CimabueServer::updateClientListRem(string node_name)
 {
+	// TODO TODO TODO TODO TODO TODO TODO
+	/*
 	map<string, string>::iterator clientListIter;
 
-	pthread_mutex_lock(&clientNameList_mutex);
+	pthread_mutex_lock(&clientList_mutex);
 
-	for (clientListIter = clientNameToIPMap.begin(); clientListIter
-	        != clientNameToIPMap.end(); clientListIter++)
+	for (clientListIter = clientList.begin(); clientListIter
+	        != clientList.end(); clientListIter++)
 	{
 		if (clientListIter->first != node_name)
 		{
@@ -369,19 +235,23 @@ void CimabueServer::updateClientListRem(string node_name)
 		}
 	}
 
-	pthread_mutex_unlock(&clientNameList_mutex);
+	pthread_mutex_unlock(&clientList_mutex);
+	*/
 }
 
-string CimabueServer::getServerAddress(string serverName)
+bool CimabueServer::getServer(string serverName, server_t *server)
 {
-	string retval = MSG_VOID;
+	bool retval = false;
 
 	pthread_mutex_lock(&serverList_mutex);
-	map<string, string>::iterator iter;
-	iter = serverNameToIPMap.find(serverName);
+	map<string, server_t>::iterator iter;
+	iter = serverList.find(serverName);
 
-	if (iter != serverNameToIPMap.end())
-		retval = iter->second;
+	if (iter != serverList.end())
+	{
+		*server = iter->second;
+		retval = true;
+	}
 	pthread_mutex_unlock(&serverList_mutex);
 
 	return retval;
@@ -389,32 +259,35 @@ string CimabueServer::getServerAddress(string serverName)
 
 void CimabueServer::removeClient(string clientName)
 {
-	// Remove the Client from all related lists
-
-	pthread_mutex_lock(&clientNameList_mutex);
-	clientNameToIPMap.erase(clientName);
-	pthread_mutex_unlock(&clientNameList_mutex);
-
-	pthread_mutex_lock(&clientPingList_mutex);
-	clientPingList.erase(clientName);
-	pthread_mutex_unlock(&clientPingList_mutex);
-
-	pthread_mutex_lock(&clientNicknameList_mutex);
-	clientNicknameToName.erase(clientName);
-	pthread_mutex_unlock(&clientNicknameList_mutex);
+	pthread_mutex_lock(&clientList_mutex);
+	clientList.erase(clientName);
+	pthread_mutex_unlock(&clientList_mutex);
 }
 
 bool CimabueServer::haveClient(string clientName)
 {
-	if (clientNameToIPMap.find(clientName) != clientNameToIPMap.end())
+	if (clientList.find(clientName) != clientList.end())
 		return true;
 	else
 		return false;
 }
 
-string CimabueServer::getClientAddress(string clientName)
+bool CimabueServer::getClient(string clientName, client_t *client)
 {
-	return clientNameToIPMap.find(clientName)->second;
+	bool retval = false;
+
+	pthread_mutex_lock(&clientList_mutex);
+	map<string, client_t>::iterator iter;
+	iter = clientList.find(clientName);
+
+	if (iter != clientList.end())
+	{
+		*client = iter->second;
+		retval = true;
+	}
+	pthread_mutex_unlock(&clientList_mutex);
+
+	return retval;
 }
 
 server_role_t CimabueServer::getRole()

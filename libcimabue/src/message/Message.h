@@ -33,6 +33,7 @@ typedef enum
 
     MSG_PING_CLIENT,			// Ping a client to verify its connection
 
+    MGS_SUCCESS,
     MSG_ERROR,
 
     MSG_SUBSCRIBE,

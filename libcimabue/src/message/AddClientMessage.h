@@ -13,13 +13,15 @@
 class AddClientMessage : public Message
 {
 public:
-	AddClientMessage(std::string client_ip, unsigned short client_port);
+	AddClientMessage(std::string client_nickname, std::string client_ip, unsigned short client_port);
 	virtual ~AddClientMessage();
 
+	std::string getClientNickname();
 	std::string getClientIP();
 	unsigned short getClientPort();
 
 protected:
+	std::string clientNickname;
 	std::string clientIP;
 	unsigned short clientPort;
 
