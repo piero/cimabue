@@ -37,16 +37,7 @@ void CimabueClient::connectToServer(string serverIP)
 	EventConnecting event_connecting(serverIP, server_port);
 	manager->updateViews(event_connecting);
 
-	// Concatenate NICKNAME ## IP ## PORT
-	char nickname_ip_port[128];
-	memset(nickname_ip_port, 0, 128);
-	sprintf(nickname_ip_port, "%s:%s:%d", nickname.c_str(), ip.c_str(), nodePort);
-
-	// Send message to Server
-	Message connectMe(MSG_ADD_CLIENT,
-	                  name, MSG_VOID,
-	                  MSG_VOID, MSG_VOID,
-	                  nickname_ip_port);
+	AddClientMessage connectMe(name, nickname, ip, listenPort);
 
 	while (!connectedToServer)
 	{

@@ -10,6 +10,7 @@
 
 #include "client_states/StateInit.h"
 #include "CimabueClient.h"
+#include "Event.h"
 #include <list>
 
 class Observer;

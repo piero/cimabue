@@ -6,7 +6,7 @@
 */
 
 #include "ServerProxyNode.h"
-#include "ClientNode.h"
+#include "CimabueClient.h"
 
 ServerProxyNode::ServerProxyNode(ClientNode *caller, unsigned short port, long select_timeout)
 		: ActiveNode(port, select_timeout)

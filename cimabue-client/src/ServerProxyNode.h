@@ -8,7 +8,7 @@
 #ifndef SERVERPROXYNODE_H_
 #define SERVERPROXYNODE_H_
 
-#include "ActiveNode.h"
+#include <node/ActiveNode.h>
 
 class ClientNode;
 
