@@ -9,9 +9,30 @@
 
 using namespace std;
 
-
+/*
 AddClientMessage::AddClientMessage(string client_nickname, string client_ip, unsigned short client_port)
 		: Message(MSG_ADD_CLIENT)
+{
+	data_separator = "#";
+
+	char client_port_s[8];
+	sprintf(client_port_s, "%d", client_port);
+
+	data = client_nickname;
+	data += data_separator;
+	data += client_ip;
+	data += data_separator;
+	data += client_port_s;
+
+	log.print(LOG_DEBUG, "[o] AddClientMessage (0x%x)\n\tdata: \"%s\"\n", this, data.c_str());
+}
+*/
+
+AddClientMessage::AddClientMessage(string fromClient,
+                                   string client_nickname,
+                                   string client_ip,
+                                   unsigned short client_port)
+		: Message(MSG_ADD_CLIENT, fromClient, MSG_VOID, MSG_VOID, MSG_VOID, MSG_VOID)
 {
 	data_separator = "#";
 
@@ -35,7 +56,7 @@ AddClientMessage::~AddClientMessage()
 string AddClientMessage::getClientNickname()
 {
 	if (!dataParsed)
-			parseData();
+		parseData();
 
 	return clientNickname;
 }
