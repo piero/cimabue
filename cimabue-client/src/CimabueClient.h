@@ -9,6 +9,7 @@
 #define CIMABUECLIENT_H_
 
 #include <node/ActiveNode.h>
+#include "ServerProxyNode.h"
 
 #define DATA_SEPARATOR	"@"
 
@@ -49,8 +50,10 @@ private:
     StateManager *manager;
 
     // Association: Client Nickname --> Client Name
-    // This is the list of connected Clients (a part from us)
+    // This is the list of connected Clients (apart from us)
     std::map<std::string, std::string> clientNickToNameMap;
+
+    ServerProxyNode *server;
 };
 
 

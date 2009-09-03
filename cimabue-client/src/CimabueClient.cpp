@@ -20,6 +20,8 @@ CimabueClient::CimabueClient(StateManager *caller) :
 	server_port = manager->getServerPort();
 	nickname = manager->getNickname();
 
+	server = NULL;
+
 	// Connect to Server
 	connectToServer(server_ip);
 }
@@ -37,6 +39,10 @@ void CimabueClient::connectToServer(string serverIP)
 	EventConnecting event_connecting(serverIP, server_port);
 	manager->updateViews(event_connecting);
 
+
+	server = new ServerProxyNode(this, listenPort);
+
+	// DON'T DO THIS!!! We should create a new ServerProxyNode and use that one!
 	AddClientMessage connectMe(name, nickname, ip, listenPort);
 
 	while (!connectedToServer)
