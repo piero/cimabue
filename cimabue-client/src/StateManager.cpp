@@ -111,10 +111,7 @@ bool StateManager::isConnected()
 
 void StateManager::connectToServer()
 {
-    connector = new CimabueClient(this);
-
-    if (connector != NULL)
-        connected = true;
+	connector->connectToServer(server_ip, server_port);
 }
 
 void StateManager::handleInput()
@@ -126,16 +123,15 @@ void StateManager::init(string nick, unsigned int localPort, string serverIP, un
 {
     log.print(LOG_DEBUG, "[ ] StateManager::init()\n");
 
-    if (connected && connector != NULL)
-    {
+    if (connector != NULL)
         delete connector;
-        connected = false;
-    }
 
     nickname = nick;
     client_port = localPort;
     server_ip = serverIP;
     server_port = serverPort;
+
+    connector = new CimabueClient(this, localPort);
 
     setState(new StateInit(this));
 }

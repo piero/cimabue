@@ -10,328 +10,150 @@
 
 using namespace std;
 
-CimabueClient::CimabueClient(StateManager *caller) :
-		ActiveNode(caller->getClientPort())
+CimabueClient::CimabueClient(StateManager *caller, unsigned short clientPort)
 {
-	manager = caller;
+    manager = caller;
 
-	connectedToServer = false;
-	server_ip = manager->getServerIP();
-	server_port = manager->getServerPort();
-	nickname = manager->getNickname();
+    nickname = manager->getNickname();
 
-	server = NULL;
-
-	// Connect to Server
-	connectToServer(server_ip);
+    server_proxy = new ServerProxy(this, clientPort);
 }
 
 CimabueClient::~CimabueClient()
 {
-	die = true;
+    delete server_proxy;
 }
 
-void CimabueClient::connectToServer(string serverIP)
+void CimabueClient::connectToServer(std::string serverIP, unsigned short serverPort)
 {
-	log.print(LOG_INFO, "[ ] Trying to connect to Server %s...\n", serverIP.c_str());
+    // Notify views
+    EventConnecting event_connecting(serverIP, serverPort);
+    manager->updateViews(event_connecting);
 
-	// Notify views
-	EventConnecting event_connecting(serverIP, server_port);
-	manager->updateViews(event_connecting);
+    while (!server_proxy->isConnected())
+    {
+        string error;
 
+        if (server_proxy->connect(serverIP, serverPort, error) != RET_SUCCESS)
+        {
+            log.print(LOG_ERROR, "[!] Error connecting to Server (%s:%d): %s\n",
+                      serverIP.c_str(), serverPort, error.c_str());
 
-	server = new ServerProxyNode(this, listenPort);
+            // Notify views
+            string error_msg = "Error connecting to Server (";
+            error_msg += serverIP;
+            error_msg += ":";
+            error_msg += serverPort;
+            error_msg += "): ";
+            error_msg += error;
+            EventError event_error(error_msg);
+            manager->updateViews(event_error);
 
-	// DON'T DO THIS!!! We should create a new ServerProxyNode and use that one!
-	AddClientMessage connectMe(name, nickname, ip, listenPort);
+            // Retry
+            sleep(2);
+        }
+    }
 
-	while (!connectedToServer)
-	{
-		Message *ret = connectMe.Send(serverIP, server_port);
+    log.print(LOG_INFO, "[ ] Connected to Server (%s:%d)\n",
+              serverIP.c_str(), serverPort);
 
-		if (!ret->isErrorMessage())
-		{
-			server = ret->getServerSource();
-			connectedToServer = true;
-		}
-		else
-		{
-			log.print(LOG_ERROR, "[!] Error connecting to Server: %s\n",
-			          ((ErrorMessage*) ret)->getErrorMessage().c_str());
-
-			// Dammit! Retry...
-			sleep(2);
-		}
-
-		delete ret;
-	}
-
-	log.print(LOG_INFO, "[ ] Connected to Server: %s\n", server.c_str());
-
-	// Notify views
-	EventConnected event_connected(serverIP, server_port);
-	manager->updateViews(event_connected);
-}
-
-void CimabueClient::setProxyIP(string ip)
-{
-	server_ip = ip;
-}
-
-string CimabueClient::getProxyIP()
-{
-	return server_ip;
+    // Notify views
+    EventConnected event_connected(serverIP, serverPort);
+    manager->updateViews(event_connected);
 }
 
 int CimabueClient::sendMessage(string dest, string content)
 {
-	int ret = RET_ERROR;
+    int ret = RET_ERROR;
 
-	map<string, string>::iterator iter;
+    map<string, string>::iterator iter = clientNickToNameMap.find(dest);
 
-	iter = clientNickToNameMap.find(dest);
-	if (iter == clientNickToNameMap.end())
-	{
-		log.print(LOG_ERROR, "[!] Couldn't find \"%s\" in client list\n", dest.c_str());
-		return ret;
-	}
+    if (iter == clientNickToNameMap.end())
+    {
+        log.print(LOG_ERROR, "[!] Couldn't find \"%s\" in client list\n", dest.c_str());
 
-	dest = iter->second;
+        // Notify views
+        string error_msg = "Couldn't find \"";
+        error_msg += dest;
+        error_msg += "\"";
+        EventError event_error(error_msg);
+        manager->updateViews(event_error);
 
-	string data_to_send = nickname;
-	data_to_send += DATA_SEPARATOR;
-	data_to_send += content;
+        return ret;
+    }
 
-	Message msg(MSG_SEND_MESSAGE,
-	            name, dest,
-	            MSG_VOID, server,
-	            data_to_send);
+    dest = iter->second;
 
-	Message *reply = msg.Send(server_ip, server_port);
+    string data_to_send = nickname;
+    data_to_send += DATA_SEPARATOR;
+    data_to_send += content;
 
-	if (reply->isErrorMessage())
-	{
-		log.print(LOG_ERROR, "[!] Error connecting to Server: %s",
-		          ((ErrorMessage*) ret)->getErrorMessage().c_str());
-	}
-	else
-		ret = RET_SUCCESS;
+    ret = server_proxy->sendMessage(dest, data_to_send);
 
-	delete reply;
-	return ret;
+    if (ret != RET_SUCCESS)
+    {
+        log.print(LOG_ERROR, "[!] Couldn't send message to \"%s\"\n", dest.c_str());
+
+        // Notify views
+        string error_msg = "Couldn't send message to \"";
+        error_msg += dest;
+        error_msg += "\"";
+        EventError event_error(error_msg);
+        manager->updateViews(event_error);
+    }
+    else
+    {
+    	// Notify views: simulate a received message from ourselves
+    	EventMessage msg_evt(nickname, content);
+    	manager->updateViews(msg_evt);
+    }
+
+    return ret;
 }
-
-int CimabueClient::processMessage(Message *msg, int skt)
-{
-	// Check whether the message was addressed to us
-	if (msg->getClientDest() != name)
-	{
-		log.print(LOG_ERROR, "[!] Message addressed to %s, but I'm %s\n",
-		          msg->getClientDest().c_str(), name.c_str());
-
-		if (close(skt) < 0)
-			log.print(LOG_ERROR, "[!] Error closing socket %d: %s\n", skt,
-			          strerror(errno));
-		else
-			log.print(LOG_PARANOID, "[x] Socket %d\n", skt);
-
-		return NODE_RET_DESTINATION_IS_NOT_ME;
-	}
-
-	switch (msg->getType())
-	{
-	case MSG_PING_CLIENT:
-		{
-			// Send ping reply
-			Message pong;
-			pong.Reply(skt);
-			log.print(LOG_PARANOID, "[ ] Replied to PING request\n");
-		}
-		break;
-
-	case MSG_SEND_MESSAGE:
-		{
-			string sender_nick;
-			string msg_content;
-
-			extractNicknameAndData(msg->getData(), sender_nick, msg_content);
-
-			log.print(LOG_PARANOID, "[*] Received message from %s:\n%s\n",
-			          sender_nick.c_str(), msg_content.c_str());
-
-			Message ack;
-			ack.Reply(skt);
-			log.print(LOG_DEBUG, "[ ] Replied to SEND_MESSAGE request\n");
-
-			// Notify views
-			EventMessage event(sender_nick, msg_content);
-			manager->updateViews(event);
-		}
-		break;
-
-	case MSG_UPDATE_ADD_CLIENTS:
-		{
-			log.print(LOG_PARANOID, "[ ] Received MSG_UPDATE_ADD_CLIENTS message\n");
-
-			// Retrieve the number of Clients
-			size_t first_separator = msg->getData().find(":");
-			string client_number_s = msg->getData().substr(0, first_separator);
-			unsigned int client_number = atoi(client_number_s.c_str());
-
-			log.print(LOG_DEBUG, "Adding %d client/s...\n", client_number);
-
-			// Strip # information from data
-			string data = msg->getData().substr(first_separator + 1);
-
-			for (unsigned int i = 0; i < client_number; ++i)
-			{
-				pair<string, string> new_client = extractNewClient(data);
-
-				clientNickToNameMap.insert(pair<string, string>(new_client.first, new_client.second));
-
-				log.print(LOG_DEBUG, "[ ] Added (%s, %s) to client list\n",
-				          new_client.first.c_str(), new_client.second.c_str());
-
-				// Notify views
-				EventUpdateAdd event(new_client.first);
-				manager->updateViews(event);
-			}
-
-			Message ack;
-			ack.Reply(skt);
-			log.print(LOG_DEBUG, "[ ] Replied to MSG_UPDATE_ADD_CLIENTS request\n");
-		}
-		break;
-
-	case MSG_UPDATE_REM_CLIENTS:
-		{
-			log.print(LOG_PARANOID, "[ ] Received MSG_UPDATE_REM_CLIENTS message: %s\n", msg->getData().c_str());
-
-			map<string, string>::iterator iter;
-
-			for (iter = clientNickToNameMap.begin();
-			        iter != clientNickToNameMap.end();
-			        iter++)
-			{
-				if (iter->second == msg->getData())
-				{
-					log.print(LOG_DEBUG, "[x] Removing %s\n", iter->second.c_str());
-
-					string nick = iter->first;
-					clientNickToNameMap.erase(iter);
-
-					// Update views
-					EventUpdateRem event(nick);
-					manager->updateViews(event);
-
-					break;
-				}
-			}
-		}
-		break;
-
-	default:
-		log.print(LOG_ERROR, "[#] Unknown message type (down)\n");
-		break;
-	}
-
-	if (close(skt) < 0)
-		log.print(LOG_ERROR, "[!] Error closing socket %d: %s\n", skt,
-		          strerror(errno));
-	else
-		log.print(LOG_PARANOID, "[x] Socket %d\n", skt);
-
-	return RET_SUCCESS;
-}
-
-/*
-int CimabueClient::processUpMessage(Message *msg, int skt)
-{
-	// Check whether the message was addressed to us
-	if (msg->getClientDest() != name)
-	{
-		log.print(LOG_ERROR, "[!] Message addressed to %s, but I'm %s\n",
-		          msg->getClientDest().c_str(), name.c_str());
-
-		if (close(skt) < 0)
-			log.print(LOG_ERROR, "[!] Error closing socket %d: %s\n", skt,
-			          strerror(errno));
-		else
-			log.print(LOG_PARANOID, "[x] Socket %d\n", skt);
-
-		return NODE_RET_DESTINATION_IS_NOT_ME;
-	}
-
-	switch (msg->getType())
-	{
-	case MSG_ADD_CLIENT:
-		{
-			// We've been added to a Server
-			server = msg->getServerSource();
-			connectedToServer = true;
-
-			log.print(LOG_INFO, "[ ] Connected to Server (%s)\n", server.c_str());
-		}
-		break;
-
-	default:
-		log.print(LOG_INFO, "[#] Unknown message type (up)\n");
-		break;
-	}
-
-	if (close(skt) < 0)
-		log.print(LOG_ERROR, "[!] Error closing socket %d: %s\n", skt,
-		          strerror(errno));
-	else
-		log.print(LOG_PARANOID, "[x] Socket %d\n", skt);
-
-	return RET_SUCCESS;
-}
-*/
 
 string CimabueClient::getNickname()
 {
-	return nickname;
+    return nickname;
 }
 
 void CimabueClient::extractNicknameAndData(string s, string &nick, string &data)
 {
-	string::size_type lastPos = s.find_first_not_of(DATA_SEPARATOR, 0);
-	string::size_type pos = s.find_first_of(DATA_SEPARATOR, 0);
+    string::size_type lastPos = s.find_first_not_of(DATA_SEPARATOR, 0);
+    string::size_type pos = s.find_first_of(DATA_SEPARATOR, 0);
 
-	list<string> tokens;
+    list<string> tokens;
 
-	while (string::npos != pos || string::npos != lastPos)
-	{
-		tokens.push_back(s.substr(lastPos, pos - lastPos));
-		lastPos = s.find_first_not_of(DATA_SEPARATOR, pos);
-		pos = s.find_first_of(DATA_SEPARATOR, lastPos);
-	}
+    while (string::npos != pos || string::npos != lastPos)
+    {
+        tokens.push_back(s.substr(lastPos, pos - lastPos));
+        lastPos = s.find_first_not_of(DATA_SEPARATOR, pos);
+        pos = s.find_first_of(DATA_SEPARATOR, lastPos);
+    }
 
-	nick = tokens.front();
-	tokens.pop_front();
-	data = tokens.front();
+    nick = tokens.front();
+    tokens.pop_front();
+    data = tokens.front();
 }
 
 pair<string, string> CimabueClient::extractNewClient(std::string &data)
 {
-	string nick, name;
-	size_t first_separator = data.find(":");
+    string nick, name;
+    size_t first_separator = data.find(":");
 
-	nick = data.substr(0, first_separator);
+    nick = data.substr(0, first_separator);
 
-	size_t second_separator = data.find(":", first_separator + 1);
-	if (second_separator != string::npos)
-	{
-		name = data.substr(first_separator + 1, second_separator - first_separator - 1);
-		data = data.substr(second_separator + 1);
-	}
-	else
-	{
-		// Last entry
-		name = data.substr(first_separator + 1);
-		data = MSG_VOID;
-	}
+    size_t second_separator = data.find(":", first_separator + 1);
+    if (second_separator != string::npos)
+    {
+        name = data.substr(first_separator + 1, second_separator - first_separator - 1);
+        data = data.substr(second_separator + 1);
+    }
+    else
+    {
+        // Last entry
+        name = data.substr(first_separator + 1);
+        data = MSG_VOID;
+    }
 
-	return pair<string, string>(nick, name);
+    return pair<string, string>(nick, name);
 }

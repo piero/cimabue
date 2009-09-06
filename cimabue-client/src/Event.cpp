@@ -25,10 +25,24 @@ event_type_t Event::getType()
     return event.type;
 }
 
+EventError::EventError(string error)
+        : Event(EVT_ERROR)
+{
+    log.print(LOG_PARANOID, "[o] New EventError: 0x%x\n", this);
+
+    memset(event.data.error.error_string, 0, 256);
+    strncpy(event.data.error.error_string, error.c_str(), error.length());
+}
+
+char* EventError::getError()
+{
+	return event.data.error.error_string;
+}
+
 EventMessage::EventMessage(string sender_nick, string msg_content)
         : Event(EVT_NEW_MESSAGE)
 {
-    log.print(LOG_PARANOID, "[+] New EventMessage: 0x%x\n", this);
+    log.print(LOG_PARANOID, "[o] New EventMessage: 0x%x\n", this);
 
     memset(event.data.msg.nickname, 0, 128);
     memset(event.data.msg.message, 0, 1024);
@@ -48,10 +62,10 @@ char* EventMessage::getMessage()
 }
 
 
-EventConnecting::EventConnecting(string target_ip, unsigned target_port)
+EventConnecting::EventConnecting(string target_ip, unsigned short target_port)
         : Event(EVT_CONNECTING)
 {
-    log.print(LOG_PARANOID, "[+] New EventConnecting: 0x%x\n", this);
+    log.print(LOG_PARANOID, "[o] New EventConnecting: 0x%x\n", this);
 
     memset(event.data.connect.server_ip, 0, 16);
 
@@ -64,16 +78,16 @@ char* EventConnecting::getTargetIP()
     return event.data.connect.server_ip;
 }
 
-unsigned EventConnecting::getTargetPort()
+unsigned short EventConnecting::getTargetPort()
 {
     return event.data.connect.server_port;
 }
 
 
-EventConnected::EventConnected(string target_ip, unsigned target_port)
+EventConnected::EventConnected(string target_ip, unsigned short target_port)
         : Event(EVT_CONNECTED)
 {
-    log.print(LOG_PARANOID, "[+] New EventConnected: 0x%x\n", this);
+    log.print(LOG_PARANOID, "[o] New EventConnected: 0x%x\n", this);
 
     memset(event.data.connect.server_ip, 0, 16);
 
@@ -86,7 +100,7 @@ char* EventConnected::getTargetIP()
     return event.data.connect.server_ip;
 }
 
-unsigned EventConnected::getTargetPort()
+unsigned short EventConnected::getTargetPort()
 {
     return event.data.connect.server_port;
 }
@@ -95,7 +109,7 @@ unsigned EventConnected::getTargetPort()
 EventUpdateAdd::EventUpdateAdd(string nickname)
         : Event(EVT_UPDATE_CLIENT_LIST_ADD)
 {
-    log.print(LOG_PARANOID, "[+] New EventUpdateAdd: 0x%x\n", this);
+    log.print(LOG_PARANOID, "[o] New EventUpdateAdd: 0x%x\n", this);
 
     memset(event.data.msg.nickname, 0, 128);
     strncpy(event.data.msg.nickname, nickname.c_str(), nickname.length());
@@ -110,7 +124,7 @@ char* EventUpdateAdd::getNickname()
 EventUpdateRem::EventUpdateRem(string nickname)
         : Event(EVT_UPDATE_CLIENT_LIST_REM)
 {
-    log.print(LOG_PARANOID, "[+] New EventUpdateRem: 0x%x\n", this);
+    log.print(LOG_PARANOID, "[o] New EventUpdateRem: 0x%x\n", this);
 
     memset(event.data.msg.nickname, 0, 128);
     strncpy(event.data.msg.nickname, nickname.c_str(), nickname.length());

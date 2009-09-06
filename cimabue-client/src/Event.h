@@ -27,6 +27,12 @@ typedef enum
 
 typedef struct
 {
+    char error_string[256];
+}
+event_error_data_t;
+
+typedef struct
+{
     char nickname[128];
     char message[1024];
 }
@@ -35,7 +41,7 @@ event_message_data_t;
 typedef struct
 {
     char server_ip[16];
-    unsigned server_port;
+    unsigned short server_port;
 }
 event_connection_data_t;
 
@@ -50,6 +56,7 @@ typedef struct
 
     union
     {
+    	event_error_data_t error;
         event_message_data_t msg;
         event_connection_data_t connect;
         event_update_clients_t update;
@@ -75,6 +82,14 @@ protected:
 };
 
 
+class EventError : public Event
+{
+public:
+	EventError(std::string error);
+
+	char* getError();
+};
+
 class EventMessage : public Event
 {
 public:
@@ -87,19 +102,19 @@ public:
 class EventConnecting : public Event
 {
 public:
-	EventConnecting(std::string target_ip, unsigned target_port);
+	EventConnecting(std::string target_ip, unsigned short target_port);
 
 	char* getTargetIP();
-	unsigned getTargetPort();
+	unsigned short getTargetPort();
 };
 
 class EventConnected : public Event
 {
 public:
-	EventConnected(std::string target_ip, unsigned target_port);
+	EventConnected(std::string target_ip, unsigned short target_port);
 
 	char* getTargetIP();
-	unsigned getTargetPort();
+	unsigned short getTargetPort();
 };
 
 class EventUpdateAdd : public Event
