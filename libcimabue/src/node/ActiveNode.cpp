@@ -19,7 +19,11 @@ ActiveNode::ActiveNode(unsigned short port,
 	die = false;
 	selectTimeout = select_timeout;
 
-	getLocalIPAddress(ip, "eth0");
+	if (getLocalIPAddress(ip, "eth0") != 0)
+	{
+		log.print(LOG_ERROR, "[!] Error retrieving local IP address: using loopback\n");
+		ip = "127.0.0.1";
+	}
 
 #if defined(__APPLE__) && defined(__MACH__)
 	// TODO: http://kevincathey.com/code/using-counting-semaphores-on-mac-os-x/
