@@ -67,16 +67,14 @@ typedef enum
 class Message
 {
 public:
-	Message(message_t msg_type = MSG_NONE);
-
 	Message(std::string msg);
 
-	Message(message_t msg_type,
-	        std::string fromClient,
-	        std::string toClient,
-	        std::string fromServer,
-	        std::string toServer,
-	        std::string content,
+	Message(message_t msg_type = MSG_NONE,
+	        std::string fromClient = MSG_VOID,
+	        std::string toClient = MSG_VOID,
+	        std::string fromServer = MSG_VOID,
+	        std::string toServer = MSG_VOID,
+	        std::string content = MSG_VOID,
 	        message_priority_t msg_priority = MSG_PRIORITY_NORMAL);
 
 	virtual ~Message();

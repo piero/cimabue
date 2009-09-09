@@ -9,18 +9,6 @@
 
 using namespace std;
 
-Message::Message(message_t msg_type)
-		: type(msg_type),
-		clientSrc(MSG_VOID),
-		clientDest(MSG_VOID),
-		serverSrc(MSG_VOID),
-		serverDest(MSG_VOID),
-		data(MSG_VOID),
-		priority(MSG_PRIORITY_NORMAL)
-{
-	log.print(LOG_PARANOID, "[o] Message: 0x%x\n", this);
-	dataParsed = false;
-}
 
 Message::Message(string msg)
 {
@@ -40,7 +28,7 @@ Message::Message(message_t msg_type,
 		data(content),
 		priority(msg_priority)
 {
-	//separator = MSG_SEPARATOR;
+	dataParsed = false;
 	log.print(LOG_PARANOID, "[o] Message: 0x%x\n", this);
 }
 
