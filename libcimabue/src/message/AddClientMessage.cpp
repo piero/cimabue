@@ -32,7 +32,7 @@ AddClientMessage::AddClientMessage(string fromClient,
                                    string client_nickname,
                                    string client_ip,
                                    unsigned short client_port)
-		: Message(MSG_ADD_CLIENT, fromClient, MSG_VOID, MSG_VOID, MSG_VOID, MSG_VOID)
+		: Message(MSG_ADD_CLIENT, fromClient)
 {
 	data_separator = "#";
 
